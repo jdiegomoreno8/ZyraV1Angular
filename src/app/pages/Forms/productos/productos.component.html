@@ -1,0 +1,18 @@
+<!-- dentro de productos.component.html -->
+<div *ngIf="mostrarModal" class="modal-overlay d-flex align-items-center justify-content-center">
+  <div class="modal-content p-4 bg-white rounded shadow position-relative">
+    <button class="btn-close position-absolute top-0 end-0 m-2" aria-label="Cerrar" (click)="cerrarModal()"></button>
+
+    <ng-container *ngIf="cargando; else empresaContent">
+      <div class="text-center p-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Cargando información...</p>
+      </div>
+    </ng-container>
+
+    <ng-template #empresaContent>
+      <h4 class="mb-3">{{ empresaSeleccionada?.nombre }}</h4>
+      <p>{{ empresaSeleccionada?.descripcion }}</p>
+    </ng-template>
+  </div>
+</div>

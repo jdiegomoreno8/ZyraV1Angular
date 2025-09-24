@@ -1,0 +1,8 @@
+.breadcrumb {
+  background-color: #e9ecef;
+}
+
+.breadcrumb a {
+  text-decoration: none;
+  color: #007bff;
+}

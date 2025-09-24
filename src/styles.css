@@ -1,1 +1,16 @@
+@import "ngx-toastr/toastr";
+
 /* You can add global styles to this file, and also import other style files */
+body {
+  margin-right: 250px;
+  transition: margin-right 0.3s;
+}
+
+.sidebar.collapsed + .main-content,
+body.sidebar-collapsed {
+  margin-right: 60px !important;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+

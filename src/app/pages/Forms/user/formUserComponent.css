@@ -1,0 +1,46 @@
+.user-form-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Efecto hover y cursor pointer */
+.card-hover {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover,
+.card-hover:focus-visible,
+.card-hover:active {
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Asegurar imágenes redimensionables */
+.card-img-top {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Responsive padding para el contenedor */
+@media (max-width: 576px) {
+  .user-form-container {
+    padding: 1rem;
+  }
+}
+.card-img-top {
+  height: 180px;
+  object-fit: cover;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+/* Estilos imagenes de las tarjetas */
+.product-image {
+  object-fit: contain;
+  width: 100%;
+  height: auto;
+  max-height: 250px;
+}
+

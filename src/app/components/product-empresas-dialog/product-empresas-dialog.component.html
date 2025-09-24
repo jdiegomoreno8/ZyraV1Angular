@@ -1,0 +1,28 @@
+<!-- product-empresas-dialog.component.html -->
+<h2 mat-dialog-title class="dialog-title text-center">
+  Tiendas de "{{ data.title }}"
+</h2>
+
+<mat-dialog-content>
+  <ng-container *ngIf="data.empresas && data.empresas!.length > 0; else noEmpresas">
+    <div class="empresa-grid">
+      <div
+        *ngFor="let empresa of data.empresas"
+        class="empresa-card"
+        (click)="irAProdcutos(empresa.id_empresa)"
+      >
+        <h3>{{ empresa.nombre }}</h3>
+        <p>{{ empresa.descripcion }}</p>
+        <span class="ver-calendario">Seleccionar productos &rarr;</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noEmpresas>
+    <p>No hay Tiendas asociadas a este producto.</p>
+  </ng-template>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-agendar" (click)="close()">Cerrar</button>
+</mat-dialog-actions>

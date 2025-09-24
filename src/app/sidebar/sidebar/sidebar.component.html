@@ -1,0 +1,32 @@
+<div class="sidebar" [class.collapsed]="collapsed">
+  <button class="btn btn-dark toggle-btn" (click)="toggleCollapse()">
+    <i class="fas" [class.fa-chevron-down]="!collapsed" [class.fa-chevron-up]="collapsed"></i>
+  </button>
+
+  <ul class="nav d-flex flex-row w-100 justify-content-around align-items-center m-0 p-0">
+    <li class="nav-item">
+      <a class="nav-link" routerLink="/">
+        <i class="fas fa-home"></i>
+        <span *ngIf="!collapsed">Inicio</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" routerLink="/form-user">
+        <i class="fas fa-user"></i>
+        <span *ngIf="!collapsed">Usuario</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" routerLink="/form-history">
+        <i class="fas fa-history"></i>
+        <span *ngIf="!collapsed">Historial</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" routerLink="/form-settings">
+        <i class="fas fa-cog"></i>
+        <span *ngIf="!collapsed">Ajustes</span>
+      </a>
+    </li>
+  </ul>
+</div>

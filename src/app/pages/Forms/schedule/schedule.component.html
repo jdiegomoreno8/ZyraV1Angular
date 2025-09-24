@@ -1,0 +1,194 @@
+<app-breadcrumb pageTitle="Datos del Usuario"></app-breadcrumb>
+
+<div class="container mt-5">
+  <h2 class="mb-4">🗓️ Agendamiento</h2>
+
+  <p *ngIf="selectedDate">
+    Has seleccionado la fecha: <strong>{{ selectedDate }}</strong>
+  </p>
+
+  <p *ngIf="noHayHorasDisponibles" class="alert alert-warning mt-2">
+    😕 Lo sentimos, no hay horarios disponibles para la fecha seleccionada.
+  </p>
+
+  <form (ngSubmit)="submitForm()" #form="ngForm" novalidate>
+    <div class="row">
+      <!-- Nombre -->
+      <div class="mb-3 col-md-6">
+        <label for="nombre" class="form-label">Nombre</label>
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          [(ngModel)]="userData.nombre"
+          class="form-control"
+          required
+           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+          #nombre="ngModel"
+        />
+        <div *ngIf="nombre.invalid && nombre.touched" class="text-danger">
+          El nombre es obligatorio.
+        </div>
+      </div>
+
+      <!-- Apellido -->
+      <div class="mb-3 col-md-6">
+        <label for="apellido" class="form-label">Apellido</label>
+        <input
+          type="text"
+          id="apellido"
+          name="apellido"
+          [(ngModel)]="userData.apellido"
+          class="form-control"
+          required
+          pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+          #apellido="ngModel"
+        />
+        <div *ngIf="apellido.invalid && apellido.touched" class="text-danger">
+          El apellido es obligatorio.
+        </div>
+      </div>
+    </div>
+
+    <!-- Teléfono -->
+    <div class="mb-3">
+      <label for="telefono" class="form-label">Teléfono</label>
+      <input
+        type="tel"
+        id="telefono"
+        name="telefono"
+        [(ngModel)]="userData.telefono"
+        pattern="^[0-9+() -]{7,15}$"
+        class="form-control"
+        required
+        #telefono="ngModel"
+      />
+      <div *ngIf="telefono.invalid && telefono.touched" class="text-danger">
+        Ingresa un teléfono válido.
+      </div>
+    </div>
+
+    <!-- Correo -->
+<div class="mb-3">
+  <label for="correo" class="form-label">Correo electrónico</label>
+  <input
+    type="email"
+    id="correo"
+    name="correo"
+    [(ngModel)]="userData.correo"
+    class="form-control"
+    required
+    #correo="ngModel"
+  />
+  <div *ngIf="correo.invalid && correo.touched" class="text-danger">
+    Ingresa un correo válido.
+  </div>
+</div>
+
+
+    <!-- Domicilio -->
+    <div class="mb-3">
+      <label class="form-label">¿Necesita domicilio?</label>
+      <div class="form-check form-check-inline">
+        <input
+          type="radio"
+          id="domicilioSi"
+          value="si"
+          [(ngModel)]="userData.domicilio"
+          name="domicilio"
+          class="form-check-input"
+        />
+        <label for="domicilioSi" class="form-check-label">Sí</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input
+          type="radio"
+          id="domicilioNo"
+          value="no"
+          [(ngModel)]="userData.domicilio"
+          name="domicilio"
+          class="form-check-input"
+        />
+        <label for="domicilioNo" class="form-check-label">No</label>
+      </div>
+    </div>
+
+    <!-- Dirección y mapa -->
+    <div *ngIf="userData.domicilio === 'si'" class="mb-3">
+      <label for="autocomplete" class="form-label">Dirección</label>
+      <input
+        type="text"
+        id="autocomplete"
+        name="direccion"
+        [(ngModel)]="userData.direccion"
+        class="form-control"
+        placeholder="Escribe o selecciona en el mapa"
+        required
+        #direccion="ngModel"
+        autocomplete="off"
+      />
+      <div *ngIf="direccion.invalid && direccion.touched" class="text-danger">
+        La dirección es obligatoria si necesita domicilio.
+      </div>
+
+      <div id="map" class="map-container mt-3"></div>
+    </div>
+<!-- Hora -->
+<div class="mb-3">
+  <label class="form-label">Hora de la cita</label>
+
+  <div class="hora-grid">
+    <button
+      type="button"
+      *ngFor="let h of generateAllHours()"
+      class="hora-btn"
+      [disabled]="!availableHours.includes(h)"
+      [ngClass]="{
+        'selected': userData.hora === h,
+        'disabled': !availableHours.includes(h)
+      }"
+      (click)="selectHour(h)"
+    >
+      {{ h }}
+    </button>
+  </div>
+
+  <div *ngIf="!userData.hora" class="text-danger mt-2">
+    Selecciona una hora válida.
+  </div>
+</div>
+
+    <!-- Botón -->
+    <button type="submit" class="btn-agendar" [disabled]="form.invalid || availableHours.length === 0">
+      Agendar
+    </button>
+  </form>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showConfirmation" class="modal-overlay d-flex align-items-center justify-content-center">
+  <div class="modal-content p-4 bg-white rounded shadow">
+    <h4 class="mb-3">Confirma tu cita</h4>
+    <ul class="list-unstyled">
+      <li><strong>Nombre:</strong> {{ userData.nombre }}</li>
+      <li><strong>Apellido:</strong> {{ userData.apellido }}</li>
+      <li><strong>Teléfono:</strong> {{ userData.telefono }}</li>
+      <li><strong>Correo:</strong> {{ userData.correo }}</li>
+      <li><strong>Domicilio:</strong> {{ userData.domicilio === 'si' ? 'Sí' : 'No' }}</li>
+      <li *ngIf="userData.domicilio === 'si'"><strong>Dirección:</strong> {{ userData.direccion }}</li>
+      <li><strong>Fecha:</strong> {{ selectedDate }}</li>
+      <li><strong>Hora:</strong> {{ userData.hora }}</li>
+      <li><strong>Empresa:</strong> {{ empresaSeleccionada }}</li>
+<li><strong>Productos:</strong>
+  <ul>
+    <li *ngFor="let producto of productosSeleccionados">{{ producto }}</li>
+  </ul>
+</li>
+    </ul>
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-success" (click)="confirmAppointment()">Confirmar</button>
+      <button class="btn btn-secondary" (click)="cancelConfirmation()">Cancelar</button>
+    </div>
+  </div>
+</div>

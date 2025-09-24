@@ -1,0 +1,48 @@
+<app-breadcrumb pageTitle="Menú Principal"></app-breadcrumb>
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="menu-container text-center p-4">
+        <h1 class="mb-4">Menú Principal</h1>
+
+        <div class="d-grid gap-3">
+          <!-- Botón Productos -->
+          <button
+            type="button"
+            class="btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 btn-animate"
+            (click)="go('form-user')"
+            [disabled]="isLoading"> 
+            <ng-container *ngIf="!isLoading; else loading">
+            <i class="fa-solid fa-store"></i>
+               
+              Productos
+            </ng-container>
+            <ng-template #loading>
+              <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+              <span>Cargando...</span>
+            </ng-template>
+          </button>
+
+          <!-- Botón Historial -->
+          <button
+            type="button"
+            class="btn btn-lg d-flex align-items-center justify-content-center gap-2 btn-animate"
+            (click)="next('form-history')"
+          >
+            <i class="fas fa-history"></i> Historial
+          </button>
+
+          <!-- Botón Ajustes -->
+          <button
+            type="button"
+            class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center gap-2 btn-animate"
+            (click)="next('form-settings')"
+          >
+            <i class="fas fa-cogs"></i> Ajustes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

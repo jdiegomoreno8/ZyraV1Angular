@@ -1,0 +1,69 @@
+/* Header */
+.header {
+  background-color: #007bff;
+  color: white;
+  padding: 15px;
+  text-align: center;
+}
+
+/* Footer */
+.footer {
+  background-color: #f1f1f1;
+  padding: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Main container layout */
+.main-container {
+  min-height: 70vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar wrapper (permite controlarlo con media queries) */
+.sidebar-wrapper {
+  order: 2; /* Móvil: abajo del contenido */
+}
+
+/* Main content */
+.main-content {
+  order: 1;
+  transition: all 0.3s ease;
+}
+
+/* Sidebar collapsed adjustment */
+.sidebar.collapsed ~ .main-content {
+  margin-right: 60px;
+}
+
+/* Media query para pantallas >= 768px */
+@media (min-width: 768px) {
+  .main-container {
+    flex-direction: row;
+  }
+
+  .sidebar-wrapper {
+    width: 250px;
+    order: 0;
+  }
+
+  .main-content {
+    margin-right: 0;
+    flex-grow: 1;
+    padding-left: 20px;
+  }
+}
+
+/* Para pantallas pequeñas: el sidebar se ajusta como barra inferior si así lo configuras */
+@media (max-width: 767px) {
+  .sidebar-wrapper {
+    width: 100%;
+  }
+
+  .main-content {
+    padding-top: 20px;
+  }
+}

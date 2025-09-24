@@ -1,0 +1,56 @@
+<app-breadcrumb pageTitle="Productos"></app-breadcrumb>
+<div class="container mt-4">
+  <h2 class="text-center mb-4">Productos disponibles</h2>
+
+  <div class="row">
+    <div
+      class="col-md-4 mb-4"
+      *ngFor="let producto of productos"
+      (click)="toggleSeleccion(producto.id_producto)"
+    >
+      <div
+        class="flip-card producto-card shadow-sm"
+        [class.seleccionado]="seleccionados.has(producto.id_producto)"
+      >
+        <div class="flip-card-inner">
+          <!-- Parte frontal -->
+          <div class="flip-card-front">
+            <img
+              [src]="producto.image || 'assets/images/productos/4.jpg'"
+              alt="{{ producto.nombre }}"
+              class="img-fluid"
+            />
+          </div>
+
+          <!-- Parte trasera -->
+          <div class="flip-card-back">
+            <h5 class="card-title">
+              <i class="fas fa-box-open me-2"></i>
+              {{ producto.nombre }}
+            </h5>
+            <p class="card-text">{{ producto.descripcion }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ <!-- Botón para continuar -->
+<div class="d-flex justify-content-center mt-4">
+  <div class="position-relative">
+    <!-- Burbuja de cantidad -->
+    <span class="badge-count" *ngIf="seleccionados.size > 0">
+      {{ seleccionados.size }}
+    </span>
+
+    <button
+      class="btn btn-success"
+      [disabled]="seleccionados.size === 0"
+      (click)="irACalendario()"
+    >
+      <i class="fas fa-calendar-alt me-2"></i>
+      Agendar Cita
+    </button>
+  </div>
+</div>
+
