@@ -124,3 +124,8 @@
   cursor: not-allowed;
   color: #eee;
 }
+/* Color modal ticket */
+.ticket-box {
+  border-left: 4px solid #0d6efd; /* azul Bootstrap */
+  background-color: #f8f9fa;
+}

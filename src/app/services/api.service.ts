@@ -12,24 +12,23 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // Obtener citas
+  // 🔹 Obtener todas las citas (si las necesitas para un dashboard o admin)
   getCitas(): Observable<any> {
     return this.http.get(`${this.baseUrl}/citas`);
   }
 
-  // Obtener empresas relacionadas a un producto
+  // 🔹 Obtener empresas relacionadas a un producto
   getEmpresasPorProducto(productoId: number): Observable<Empresa[]> {
-    return this.http.get<Empresa[]>(`${this.baseUrl}/productos/${productoId}/empresas`)
-      .pipe(
-        catchError(error => {
-          console.error('Error obteniendo empresas:', error);
-          return of([]); // Devuelve un array vacío en caso de error
-        })
-      );
+    return this.http.get<Empresa[]>(`${this.baseUrl}/productos/${productoId}/empresas`).pipe(
+      catchError(error => {
+        console.error('Error obteniendo empresas:', error);
+        return of([]); // Retorna array vacío si hay error
+      })
+    );
   }
 
-  // Obtener productos por empresa (nuevo método)
- getProductosPorEmpresa(idEmpresa: number): Observable<Product[]> {
+  // 🔹 Obtener productos ofrecidos por una empresa
+  getProductosPorEmpresa(idEmpresa: number): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.baseUrl}/empresas/${idEmpresa}/productos`).pipe(
       catchError(error => {
         console.error('Error obteniendo productos:', error);
@@ -38,13 +37,18 @@ export class ApiService {
     );
   }
 
+  // 🔹 Obtener los datos de una empresa por ID (nombre, ubicación, etc.)
   getEmpresaPorId(id: number): Observable<Empresa> {
-  return this.http.get<Empresa>(`${this.baseUrl}/empresas/${id}`).pipe(
-    catchError(error => {
-      console.error('Error obteniendo empresa:', error);
-      return of({ id_empresa: id, nombre: 'Desconocida' } as Empresa);
-    })
-  );
+    return this.http.get<Empresa>(`${this.baseUrl}/empresas/${id}`).pipe(
+      catchError(error => {
+        console.error('Error obteniendo empresa:', error);
+        return of({ id_empresa: id, nombre: 'Desconocida' } as Empresa);
+      })
+    );
+  }
+  
+getMetodosPago(): Observable<{ id_pago: number; metodo: string }[]> {
+  return this.http.get<{ id_pago: number; metodo: string }[]>(`${this.baseUrl}/metodos-pago`);
 }
 
 }

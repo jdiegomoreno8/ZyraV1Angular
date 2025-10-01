@@ -27,8 +27,8 @@ export const routes: Routes = [
     { path: 'schedule', component: ScheduleComponent }, 
     { path: 'product-empresas-dialog', component: ProductEmpresasDialogComponent }, //  Nueva ruta
     { path: 'productos', component: ProductosComponent }, //  Nueva ruta
-    {path: 'calendar/:id_empresa', component: CalendarComponent},
-    { path: 'empresa/:id/productos', component: EmpresaProductosComponent },
+      { path: 'empresa/:id/productos', component: EmpresaProductosComponent },
+    
 
 
      

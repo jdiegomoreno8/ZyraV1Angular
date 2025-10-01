@@ -75,7 +75,7 @@ export class EmpresaProductosComponent implements OnInit {
 irACalendario(): void {
   this.router.navigate(['/calendar'], {
     queryParams: {
-      id_empresa: this.idEmpresa,
+      empresa: this.idEmpresa, // id_empresa CAMBIADO a empresa para que coincida con calendar.component.ts
       empresa_nombre: this.nombreEmpresa,
       productos: Array.from(this.seleccionados).join(',')
     }

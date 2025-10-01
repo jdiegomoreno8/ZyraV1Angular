@@ -24,7 +24,7 @@
     "@angular/platform-server": "^19.2.0",
     "@angular/router": "^19.2.0",
     "@angular/ssr": "^19.2.16",
-    "@fortawesome/angular-fontawesome": "^0.12.1",
+    "@fortawesome/angular-fontawesome": "^0.13.0",
     "@fortawesome/fontawesome-free": "^7.0.1",
     "@fortawesome/fontawesome-svg-core": "^7.0.1",
     "@fortawesome/free-solid-svg-icons": "^7.0.1",

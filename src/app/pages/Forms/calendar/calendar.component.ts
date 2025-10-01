@@ -26,9 +26,11 @@ import { MatNativeDateModule } from '@angular/material/core';
   styleUrls: ['./calendar.component.css'],
 })
 export class CalendarComponent implements OnInit {
-  today: Date = new Date(); // Fecha mínima
-  selectedDate: Date | null = null; // Fecha seleccionada
-  idEmpresa: number | null = null; // ID recibido por URL
+  today: Date = new Date();
+  selectedDate: Date | null = null;
+  idEmpresa: number | null = null;
+  empresaNombre: string = '';
+  productosSeleccionados: number[] = [];  // Aquí los IDs reales seleccionados
 
   constructor(
     private router: Router,
@@ -36,35 +38,43 @@ export class CalendarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Capturamos el id_empresa desde la URL
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id_empresa');
+    this.route.queryParams.subscribe(params => {
+      const id = params['empresa'];
       this.idEmpresa = id ? +id : null;
+      this.empresaNombre = params['empresa_nombre'] || '';
 
-      if (this.idEmpresa) {
-        console.log('ID de empresa recibido:', this.idEmpresa);
-        // Aquí podrías hacer una llamada a la API para obtener citas, datos, etc.
-      } else {
-        console.warn('No se recibió id_empresa en la URL.');
+      // Si ya se pasaron productos del componente anterior, captúralos
+      if (params['productos']) {
+        this.productosSeleccionados = params['productos']
+          .split(',')
+          .map((idStr: string) => +idStr);
       }
     });
   }
 
-  /**
-   * Maneja la selección de fecha desde Angular Material Datepicker
-   */
   onDateSelected(date: Date | null): void {
     this.selectedDate = date;
 
-    if (this.selectedDate) {
+    if (this.selectedDate && this.idEmpresa != null) {
       const formattedDate = this.selectedDate.toISOString().split('T')[0];
+      const queryParams: any = {
+        date: formattedDate,
+        empresa: this.idEmpresa,
+        empresa_nombre: this.empresaNombre,
+      };
 
-      this.router.navigate(['schedule'], {
-        queryParams: {
-          date: formattedDate,
-          empresa: this.idEmpresa, // Puedes pasar el ID si lo necesitas en la siguiente vista
-        },
-      });
+      if (this.productosSeleccionados.length > 0) {
+        queryParams.productos = this.productosSeleccionados.join(',');
+      }
+// borra esto despues
+console.log('Navegando a Schedule con:');
+console.log('Fecha:', formattedDate);
+console.log('Empresa:', this.idEmpresa);
+console.log('Productos seleccionados:', this.productosSeleccionados);
+//Hasta aca
+      this.router.navigate(['schedule'], { queryParams });
+    } else {
+      console.warn('Faltan datos para navegar: fecha o empresa.');
     }
   }
 }
