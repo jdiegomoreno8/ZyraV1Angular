@@ -1,3 +1,4 @@
+//Schedule.component.ts
 /// <reference types="google.maps" />
 
 // ─── Importaciones ───────────────────────────────────────────────────────────
@@ -6,10 +7,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastrModule, ToastrService } from 'ngx-toastr';
 import { BreadcrumbComponent } from '../../../components/breadcrumb/breadcrumb.component';
 import { Cita, CitaService } from '../../../services/cita.service';
 import { ApiService } from '../../../services/api.service'; // Servicio de API para productos, empresas, etc.
+import { environment } from '../../../../enviroments/enviroment';
+
 
 // ─── Helper: Validación de lugar con geometría ───────────────────────────────
 function isPlaceWithGeometry(
@@ -20,17 +23,25 @@ function isPlaceWithGeometry(
   return place.geometry !== undefined && place.geometry.location !== undefined;
 }
 
-  // ─── Interface metodoPago ────────────────────────────────────────────────────
+// ─── Interface metodoPago ────────────────────────────────────────────────────
 interface MetodoPago {
   id_pago: number;
   metodo: string;
+}
+// Interface Producto seleccionado
+
+interface ProductoSeleccionado {
+  id_producto: number;
+  nombre: string;
+  precio: number;
+  cantidad: number;
 }
 
 // ─── Decorador del Componente ────────────────────────────────────────────────
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [CommonModule, FormsModule, BreadcrumbComponent],
+  imports: [CommonModule, FormsModule, BreadcrumbComponent ],
   templateUrl: './schedule.component.html',
   styleUrls: ['./schedule.component.css'],
 })
@@ -45,16 +56,21 @@ export class ScheduleComponent implements AfterViewChecked {
     direccion: '',
     hora: '',
     id_pago: '', // <- puede ser string si viene del select
-  };
+    observaciones:'',
+    metodoEnvioFactura: '' 
+   };
 
   // ─── Parámetros de la Cita ─────────────────────────────────────────────────
   selectedDate: string | null = null;
   empresaSeleccionada: string = '';
-  productosSeleccionados: string[] = [];
+  productosSeleccionados: ProductoSeleccionado[] = [];
   selectedProductIds: number[] = [];
+  valorProductos: number = 0;
+  costoDomicilio: number = 0;
+  totalPagar: number = 0;
+
   //método de pago
   metodosPago: { id_pago: number; metodo: string }[] = [];
-
 
   // ─── Parámetros de la empresa ──────────────────────────────────────────────────────
   idEmpresa: number = 0;
@@ -77,10 +93,9 @@ export class ScheduleComponent implements AfterViewChecked {
   private autocomplete?: google.maps.places.Autocomplete;
   private mapInitialized = false;
   // Datos de la empresa
-  readonly tiendaLatLng = { lat: 6.1788091, lng: -75.6009626 };
+  //readonly tiendaLatLng = { lat: 6.1788091, lng: -75.6009626 };
+  tiendaLatLng = {lat: 0, lng: 0};
   distanciaKm: number = 0;
-  costoDomicilio: number = 0;
-
 
   // ─── Constructor ───────────────────────────────────────────────────────────
   constructor(
@@ -97,10 +112,20 @@ export class ScheduleComponent implements AfterViewChecked {
         params['empresa_nombre'] || 'Empresa no definida';
       this.idEmpresa = Number(this.route.snapshot.queryParamMap.get('empresa'));
 
-      const productosParam = params['productos'];
-      this.selectedProductIds = productosParam
-        ? productosParam.split(',').map((id: string) => +id)
-        : [];
+     const productosParam = params['productos'];
+
+this.productosSeleccionados = productosParam
+  ? productosParam.split(',').map((p: string) => {
+      const [idStr, cantStr] = p.split(':');
+      return {
+        id_producto: +idStr,
+        cantidad: +cantStr || 1,
+        nombre: '', // temporal, lo llenaremos más tarde
+        precio: 0   // temporal, lo llenaremos más tarde
+      } as ProductoSeleccionado;
+    })
+  : [];
+
 
       const idEmpresa = params['empresa'];
       if (!idEmpresa) {
@@ -116,24 +141,33 @@ export class ScheduleComponent implements AfterViewChecked {
         this.generateAvailableHours();
       }
 
-this.cargarMetodosPago();
-
-
+      this.cargarMetodosPago();
     });
+    
   }
 
   // ─── Ciclo de Vida: ngAfterViewChecked ─────────────────────────────────────
-  async ngAfterViewChecked(): Promise<void> {
-    if (this.userData.domicilio === 'si' && !this.mapInitialized) {
-      try {
-        await this.loadGoogleMapsScript();
-        this.initMap();
-        this.mapInitialized = true;
-      } catch (error) {
-        console.error('Error cargando Google Maps:', error);
-      }
+async ngAfterViewChecked(): Promise<void> {
+  if (
+    this.userData.domicilio === 'si' &&
+    !this.mapInitialized
+  ) {
+    try {
+      await this.loadGoogleMapsScript();
+
+      this.mapInitialized = true;
+
+      // Google Maps está listo, llama a:
+      this.cargarUbicacionEmpresa();
+
+      this.initMap();
+
+    } catch (error) {
+      console.error('Error cargando Google Maps:', error);
     }
   }
+}
+
 
   // ─── Mapa: Cargar Script de Google Maps ────────────────────────────────────
   private loadGoogleMapsScript(): Promise<void> {
@@ -149,8 +183,8 @@ this.cargarMetodosPago();
 
       const script = document.createElement('script');
       script.id = 'googleMapsScript';
-      script.src =
-        'https://maps.googleapis.com/maps/api/js?key=AIzaSyDF-4nItghEwCXm3FuRVGijRCHODyYTngo&libraries=places,geometry';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places,geometry`;
+
       script.async = true;
       script.defer = true;
       script.onload = () => resolve();
@@ -195,7 +229,7 @@ this.cargarMetodosPago();
     // Evento: lugar seleccionado desde autocomplete
     this.autocomplete.addListener('place_changed', () => {
       //Revisar logs
-        console.log('place_changed evento disparado');
+      console.log('place_changed evento disparado');
       const place = this.autocomplete!.getPlace();
       if (!isPlaceWithGeometry(place)) return;
 
@@ -215,7 +249,7 @@ this.cargarMetodosPago();
     // Evento: marcador arrastrado manualmente
     this.marker.addListener('dragend', () => {
       //Revisar logs
-        console.log('dragend evento disparado');
+      console.log('dragend evento disparado');
       const pos = this.marker!.getPosition();
       if (!pos) return;
 
@@ -225,16 +259,16 @@ this.cargarMetodosPago();
           this.zone.run(() => {
             this.userData.direccion = results[0].formatted_address;
 
-              // Cálculo de distancia y costo
-          this.calcularDistanciaYCosto();
+            // Cálculo de distancia y costo
+            this.calcularDistanciaYCosto();
           });
         } else {
           this.zone.run(() => {
             this.userData.direccion = `${pos.lat().toFixed(6)}, ${pos
               .lng()
               .toFixed(6)}`;
-               // Cálculo también si hay coordenadas sin dirección
-        this.calcularDistanciaYCosto();
+            // Cálculo también si hay coordenadas sin dirección
+            this.calcularDistanciaYCosto();
           });
         }
       });
@@ -243,7 +277,7 @@ this.cargarMetodosPago();
     // Evento: click en el mapa
     this.map.addListener('click', (e: google.maps.MapMouseEvent) => {
       //Revisar logs
-        console.log('map click evento disparado', e.latLng);
+      console.log('map click evento disparado', e.latLng);
       if (!e.latLng) return;
 
       const latlng = e.latLng;
@@ -255,8 +289,8 @@ this.cargarMetodosPago();
         if (status === 'OK' && results && results[0]) {
           this.zone.run(() => {
             this.userData.direccion = results[0].formatted_address;
-               //  Cálculo
-        this.calcularDistanciaYCosto();
+            //  Cálculo
+            this.calcularDistanciaYCosto();
           });
         }
       });
@@ -264,41 +298,117 @@ this.cargarMetodosPago();
   }
   // ─── Conversión calculo costo domicilio ────────────────────────────────────────────────────
 
-
-calcularCostoDomicilio(distKm: number): number {
-  // Si está dentro de los primeros 0,5 km (500 m = 0,5 km)
-  if (distKm <= 0.5) {
-    return 0;
+  calcularCostoDomicilio(distKm: number): number {
+    // Si está dentro de los primeros 0,5 km (500 m = 0,5 km)
+    if (distKm <= 0.5) {
+      return 0;
+    }
+    // Resto de kilómetros cobrables
+    const kmCobrar = distKm - 0.5;
+    // Costo fijo por km: 2.500 COP
+    return Math.round(kmCobrar * 2500);
   }
-  // Resto de kilómetros cobrables
-  const kmCobrar = distKm - 0.5;
-  // Costo fijo por km: 2.500 COP
-  return Math.round(kmCobrar * 2500);
+
+  private calcularDistanciaYCosto(): void {
+    const destino = this.marker?.getPosition();
+    if (!destino) return;
+
+    // Verifica si geometry existe
+    if (!google.maps.geometry || !google.maps.geometry.spherical) {
+      console.error('google.maps.geometry.spherical no disponible');
+      return;
+    }
+
+    const tiendaLatLng = new google.maps.LatLng(
+      this.tiendaLatLng.lat,
+      this.tiendaLatLng.lng
+    );
+    const distanciaMetros =
+      google.maps.geometry.spherical.computeDistanceBetween(
+        tiendaLatLng,
+        destino
+      );
+    const distanciaKm = distanciaMetros / 1000;
+    const costoDomicilio = this.calcularCostoDomicilio(distanciaKm);
+
+    this.distanciaKm = distanciaKm;
+    this.costoDomicilio = costoDomicilio;
+
+    console.log(
+      `Distancia: ${distanciaKm.toFixed(2)} km, Costo: ${costoDomicilio} COP`
+    );
+
+    // Actualiza el total al calcular el domicilio
+    this.actualizarTotal();
+  }
+
+get totalPagarCalculado(): number {
+  return (
+    this.valorProductos +
+    (this.userData.domicilio === 'si' ? this.costoDomicilio : 0)
+  );
 }
 
-private calcularDistanciaYCosto(): void {
-  const destino = this.marker?.getPosition();
-  if (!destino) return;
-
-  // Verifica si geometry existe
-  if (!google.maps.geometry || !google.maps.geometry.spherical) {
-    console.error('google.maps.geometry.spherical no disponible');
+   /**
+   * Carga la dirección de la empresa desde la bd
+   */
+private cargarUbicacionEmpresa(): void {
+  if (!this.idEmpresa) {
+    console.warn('ID de empresa no disponible.');
     return;
   }
 
-  const tiendaLatLng = new google.maps.LatLng(this.tiendaLatLng.lat, this.tiendaLatLng.lng);
-  const distanciaMetros = google.maps.geometry.spherical.computeDistanceBetween(
-    tiendaLatLng,
-    destino
-  );
-  const distanciaKm = distanciaMetros / 1000;
-  const costoDomicilio = this.calcularCostoDomicilio(distanciaKm);
+  this.apiService.getEmpresaPorId(this.idEmpresa).subscribe({
+    next: (empresa) => {
+      // Si vienen coordenadas válidas
+      if (empresa.lat && empresa.lng) {
+        this.tiendaLatLng = { lat: empresa.lat, lng: empresa.lng };
+        console.log('Ubicación de la empresa cargada:', this.tiendaLatLng);
 
-  this.distanciaKm = distanciaKm;
-  this.costoDomicilio = costoDomicilio;
+        if (this.map) {
+          const tiendaLatLngGoogle = new google.maps.LatLng(
+            this.tiendaLatLng.lat,
+            this.tiendaLatLng.lng
+          );
+          this.map.setCenter(tiendaLatLngGoogle);
+          this.calcularDistanciaYCosto();
+        }
 
-  console.log(`Distancia: ${distanciaKm.toFixed(2)} km, Costo: ${costoDomicilio} COP`);
+      // Si NO hay coordenadas, pero sí hay dirección física
+      } else if (empresa.direccion) {
+        console.log('No hay coordenadas, intentando geocodificar dirección:', empresa.direccion);
+        const geocoder = new google.maps.Geocoder();
+
+        geocoder.geocode({ address: empresa.direccion }, (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location;
+            this.tiendaLatLng = {
+              lat: location.lat(),
+              lng: location.lng(),
+            };
+            console.log('Ubicación de empresa geocodificada:', this.tiendaLatLng);
+
+            if (this.map) {
+              this.map.setCenter(location);
+              this.calcularDistanciaYCosto();
+            }
+
+          } else {
+            console.warn('No se pudo geocodificar la dirección de la empresa:', status);
+          }
+        });
+
+      } else {
+        console.warn('La empresa no tiene coordenadas ni dirección.');
+      }
+    },
+    error: (err) => {
+      console.error('Error al obtener datos de la empresa:', err);
+    },
+  });
 }
+
+   
 
   // ─── Conversión de Tiempo ────────────────────────────────────────────────────
 
@@ -320,30 +430,32 @@ private calcularDistanciaYCosto(): void {
     const m = (minutes % 60).toString().padStart(2, '0');
     return `${h}:${m}`;
   }
-    // ─── Métodos de pago ────────────────────────────────────────────────────
-getNombreMetodoPago(): string {
-  const metodo = this.metodosPago.find(m => m.id_pago === +this.userData.id_pago);
-  return metodo ? metodo.metodo : 'No especificado';
-}
+  // ─── Métodos de pago ────────────────────────────────────────────────────
+  getNombreMetodoPago(): string {
+    const metodo = this.metodosPago.find(
+      (m) => m.id_pago === +this.userData.id_pago
+    );
+    return metodo ? metodo.metodo : 'No especificado';
+  }
 
-private cargarMetodosPago(): void {
-  this.apiService.getMetodosPago().subscribe({
-    next: (metodos: MetodoPago[]) => {
-      this.metodosPago = metodos;
-    },
-    error: (err: any) => {
-      console.error('Error cargando métodos de pago:', err);
-    }
-  });
-}
-
-
+  private cargarMetodosPago(): void {
+    this.apiService.getMetodosPago().subscribe({
+      next: (metodos: MetodoPago[]) => {
+        this.metodosPago = metodos;
+      },
+      error: (err: any) => {
+        console.error('Error cargando métodos de pago:', err);
+      },
+    });
+  }
 
   // ─── Total a pagar ────────────────────────────────────────────────────
-  get totalPagar(): number {
-  // Suma del costo de domicilio y otros cargos, si tienes más
-  return this.costoDomicilio;
-}
+
+  actualizarTotal() {
+    this.totalPagar =
+      this.valorProductos +
+      (this.userData.domicilio === 'si' ? this.costoDomicilio : 0);
+  }
 
   // ─── Horarios Disponibles ────────────────────────────────────────────────────
 
@@ -401,12 +513,20 @@ private cargarMetodosPago(): void {
       this.generateAvailableHours();
       return;
     }
+    // Si fecha es Date o string con hora, conviérte al formato
+    let fechaParam: string;
+    if (fecha.includes('T')) {
+      fechaParam = fecha.split('T')[0];
+    } else {
+      fechaParam = fecha;
+    }
 
-    this.citaService.getHorasOcupadas(fecha).subscribe({
+    this.citaService.getHorasOcupadas(fechaParam, this.idEmpresa).subscribe({
       next: (horasOcupadas) => {
         this.filtrarHorasDisponibles(horasOcupadas || []);
       },
       error: (err) => {
+        console.error('Error al cargar horas ocupadas:', err);
         this.generateAvailableHours();
       },
     });
@@ -426,63 +546,71 @@ private cargarMetodosPago(): void {
   /**
    * Envía el formulario de cita después de validar los campos.
    */
-  submitForm(): void {
-    const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+submitForm(): void {
+  const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+  const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  console.log('Método de pago seleccionado:', this.userData.id_pago);
 
-    if (
-      !this.userData.nombre.trim() ||
-      !this.userData.apellido.trim() ||
-      !this.userData.telefono.trim() ||
-      !this.userData.correo.trim() ||
-      !this.userData.hora.trim() ||
-      (this.userData.domicilio === 'si' && !this.userData.direccion.trim())
-    ) {
-      this.toastr.warning(
-        'Por favor, completa todos los campos obligatorios.',
-        'Campos incompletos'
-      );
-      return;
-    }
-
-    if (
-      !soloLetrasRegex.test(this.userData.nombre) ||
-      !soloLetrasRegex.test(this.userData.apellido)
-    ) {
-      this.toastr.warning(
-        'El nombre y apellido solo deben contener letras.',
-        'Validación'
-      );
-      return;
-    }
-
-    if (!correoRegex.test(this.userData.correo)) {
-      this.toastr.warning('El correo ingresado no es válido.', 'Validación');
-      return;
-    }
-
-    // Asignar dirección por defecto si no aplica domicilio
-    const direccion =
-      this.userData.domicilio === 'si' ? this.userData.direccion : 'tienda';
-
-    this.citaParaConfirmar = {
-      nombre: this.userData.nombre,
-      apellido: this.userData.apellido,
-      telefono: this.userData.telefono,
-      correo: this.userData.correo,
-      domicilio: this.userData.domicilio,
-      direccion,
-      hora: this.userData.hora,
-      fecha: this.selectedDate!,
-      id_empresa: this.idEmpresa,
-      productos: this.selectedProductIds,
-      // Propiedades cotización
-      distancia_km: this.distanciaKm,
-      costo_domicilio: this.costoDomicilio
-    };
-
-    this.showConfirmation = true;
+  if (
+    !this.userData.nombre.trim() ||
+    !this.userData.apellido.trim() ||
+    !this.userData.telefono.trim() ||
+    !this.userData.correo.trim() ||
+    !this.userData.hora.trim() ||
+    (this.userData.domicilio === 'si' && !this.userData.direccion.trim())
+  ) {
+    this.toastr.warning(
+      'Por favor, completa todos los campos obligatorios.',
+      'Campos incompletos'
+    );
+    return;
   }
+
+  if (
+    !soloLetrasRegex.test(this.userData.nombre) ||
+    !soloLetrasRegex.test(this.userData.apellido)
+  ) {
+    this.toastr.warning(
+      'El nombre y apellido solo deben contener letras.',
+      'Validación'
+    );
+    return;
+  }
+
+  if (!correoRegex.test(this.userData.correo)) {
+    this.toastr.warning('El correo ingresado no es válido.', 'Validación');
+    return;
+  }
+
+  const direccion =
+    this.userData.domicilio === 'si' ? this.userData.direccion : 'tienda';
+
+  this.citaParaConfirmar = {
+    nombre: this.userData.nombre,
+    apellido: this.userData.apellido,
+    telefono: this.userData.telefono,
+    correo: this.userData.correo,
+    domicilio: this.userData.domicilio,
+    direccion,
+    hora: this.userData.hora,
+    fecha: this.selectedDate!,
+    id_empresa: this.idEmpresa,
+    productos: this.productosSeleccionados.map(p => ({
+      id_producto: p.id_producto,
+      cantidad: p.cantidad,
+    })),
+    distancia_km: this.distanciaKm,
+    costo_domicilio: this.costoDomicilio,
+    id_pago: +this.userData.id_pago,
+    observaciones: this.userData.observaciones || '',
+    metodo_envio: this.userData.metodoEnvioFactura
+    
+    
+  };
+
+  this.showConfirmation = true;
+}
+
 
   // ─── Confirmar y Registrar la Cita ───────────────────────────────────────────
 
@@ -494,6 +622,7 @@ private cargarMetodosPago(): void {
       this.toastr.warning('No hay datos para confirmar.');
       return;
     }
+    console.log('Enviando cita al backend:', this.citaParaConfirmar);
 
     this.citaService.agendarCita(this.citaParaConfirmar).subscribe({
       next: (response) => {
@@ -513,6 +642,7 @@ private cargarMetodosPago(): void {
           'Error'
         );
       },
+      
     });
   }
 
@@ -521,32 +651,43 @@ private cargarMetodosPago(): void {
   /**
    * Carga los nombres de los productos seleccionados desde el backend.
    */
-  cargarNombresProductos(): void {
-    const idEmpresa = this.route.snapshot.queryParamMap.get('empresa');
+cargarNombresProductos(): void {
+  const idEmpresa = +this.route.snapshot.queryParamMap.get('empresa')!;
 
-    if (!idEmpresa) {
-      console.warn('No se recibió id_empresa en parámetros');
-      return;
-    }
 
-    console.log('ID Empresa:', idEmpresa);
-    console.log('selectedProductIds:', this.selectedProductIds);
-
-    this.apiService.getProductosPorEmpresa(this.idEmpresa).subscribe({
-      next: (productos) => {
-        console.log('Productos recibidos:', productos);
-        this.productosSeleccionados = productos
-          .filter((p) =>
-            this.selectedProductIds.includes(Number(p.id_producto))
-          )
-          .map((p) => p.nombre);
-        console.log('Productos seleccionados:', this.productosSeleccionados);
-      },
-      error: (error) => {
-        console.error('Error al obtener productos:', error);
-      },
-    });
+  if (!idEmpresa) {
+    console.warn('No se recibió id_empresa en parámetros');
+    return;
   }
+
+  console.log('ID Empresa:', idEmpresa);
+  console.log('selectedProductIds:', this.selectedProductIds);
+
+  this.apiService.getProductosPorEmpresa(idEmpresa).subscribe({
+    next: (productos) => {
+      this.productosSeleccionados = this.productosSeleccionados.map((seleccionado) => {
+        const producto = productos.find(p => p.id_producto === seleccionado.id_producto);
+
+        return {
+          ...seleccionado,
+          nombre: producto?.nombre || 'Producto desconocido',
+          precio: producto?.precio ?? 0
+        };
+      });
+      // ACTUALIZA los IDs seleccionados (para enviar al backend)
+this.selectedProductIds = this.productosSeleccionados.map(p => p.id_producto);
+
+
+      this.valorProductos = this.productosSeleccionados.reduce(
+        (sum, p) => sum + (p.precio * p.cantidad),
+        0
+      );
+
+      this.actualizarTotal();
+    },
+  });
+}
+
 
   // ─── Utilidades ──────────────────────────────────────────────────────────────
 
@@ -563,20 +704,21 @@ private cargarMetodosPago(): void {
       direccion: '',
       hora: '',
       id_pago: '',
-
+      observaciones:'',
+      metodoEnvioFactura:''
     };
     this.citaParaConfirmar = undefined!;
   }
   /**Resetear el mapa */
   resetMapaDomicilio(): void {
-  this.mapInitialized = false;
-  this.map = undefined;
-  this.marker = undefined;
-  this.costoDomicilio = 0;
-  this.distanciaKm = 0;
-  this.userData.direccion = '';
-}
+    this.mapInitialized = false;
+    this.map = undefined;
+    this.marker = undefined;
+    this.costoDomicilio = 0;
+    this.distanciaKm = 0;
+    this.userData.direccion = '';
 
+  }
 
   /**
    * Cancela la ventana de confirmación sin enviar la cita.

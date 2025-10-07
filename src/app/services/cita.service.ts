@@ -1,6 +1,9 @@
+//cita.service.ts
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../enviroments/enviroment';
+
 
 export interface Cita {
   nombre: string;
@@ -9,39 +12,38 @@ export interface Cita {
   correo: string;
   domicilio: string;
   direccion: string;
-  fecha: string;     // Formato: 'YYYY-MM-DD'
-  hora: string;      // Formato: 'HH:mm'
+  fecha: string;     // 'YYYY-MM-DD'
+  hora: string;      // 'HH:mm'
   id_pago?: number | null;
   id_empresa?: number | null;
   numero_ticket?: string;
-  productos?: number[]; // IDs de productos seleccionados
+  productos: { id_producto: number; cantidad: number }[]; 
   distancia_km: number;
   costo_domicilio: number;
+  observaciones: string; 
+  // opcional para enviar a la bd el método de notificación
+  metodo_envio: string;
 }
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class CitaService {
-  private apiUrl = 'http://127.0.0.1:8000/citas';
+  private apiUrlCitas = environment.apiUrlCitas;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Envía una cita al backend para agendarla
-   */
   agendarCita(cita: Cita): Observable<any> {
-    return this.http.post(this.apiUrl, cita);
+    return this.http.post(this.apiUrlCitas, cita);
   }
 
-  /**
-   * Consulta las horas ocupadas de una empresa en una fecha
-   * @param fecha YYYY-MM-DD
-   * @param idEmpresa ID de la empresa
-   */
-  getHorasOcupadas(fecha: string, idEmpresa?: number): Observable<string[]> {
-    const params: any = { fecha };
-    if (idEmpresa) params.id_empresa = idEmpresa;
-    return this.http.get<string[]>(`${this.apiUrl}/ocupadas`, { params });
+getHorasOcupadas(fecha: string, idEmpresa?: number): Observable<string[]> {
+  const params: any = { fecha };
+  if (idEmpresa !== undefined && idEmpresa !== null) {
+    params.id_empresa = idEmpresa;
   }
+  return this.http.get<string[]>(`${this.apiUrlCitas}/ocupadas`, { params });
+}
+
 }

@@ -1,3 +1,4 @@
+<!-- schedule.component.html -->
 <app-breadcrumb pageTitle="Datos del Usuario"></app-breadcrumb>
 
 <div class="container mt-5">
@@ -32,9 +33,13 @@
           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
           #nombre="ngModel"
         />
-        <div *ngIf="nombre.invalid && nombre.touched" class="text-danger">
-          El nombre es obligatorio.
-        </div>
+       <div *ngIf="nombre.errors?.['required'] && nombre.touched" class="text-danger">
+  El nombre es obligatorio.
+</div>
+<div *ngIf="nombre.errors?.['pattern'] && nombre.touched" class="text-danger">
+  El nombre solo puede contener letras.
+</div>
+
       </div>
 
       <!-- Apellido -->
@@ -64,7 +69,7 @@
         id="telefono"
         name="telefono"
         [(ngModel)]="userData.telefono"
-        pattern="^[0-9+() -]{7,15}$"
+        pattern="^[0-9+() \-]{7,15}$"
         class="form-control"
         required
         #telefono="ngModel"
@@ -92,32 +97,33 @@
     </div>
 
     <!-- Domicilio -->
-    <div class="mb-3">
-      <label class="form-label">¿Necesita domicilio?</label>
-      <div class="form-check form-check-inline">
-        <input
-          type="radio"
-          id="domicilioSi"
-          value="si"
-          [(ngModel)]="userData.domicilio"
-          (change)="resetMapaDomicilio()"
-          name="domicilio"
-          class="form-check-input"
-        />
-        <label for="domicilioSi" class="form-check-label">Sí</label>
-      </div>
-      <div class="form-check form-check-inline">
-        <input
-          type="radio"
-          id="domicilioNo"
-          value="no"
-          [(ngModel)]="userData.domicilio"
-          name="domicilio"
-          class="form-check-input"
-        />
-        <label for="domicilioNo" class="form-check-label">No</label>
-      </div>
-    </div>
+<div class="mb-4">
+  <label class="form-label fw-semibold">¿Cómo deseas recibir tu servicio?</label>
+    <div class="form-check form-check-inline">
+<input
+  type="radio"
+  id="domicilioSi"
+  value="si"
+  [(ngModel)]="userData.domicilio"
+  (change)="resetMapaDomicilio(); actualizarTotal()"
+  name="domicilio"
+  class="form-check-input"
+/>
+    <label for="domicilioSi" class="form-check-label">Domicilio</label>
+  </div>
+  <div class="form-check form-check-inline">
+<input
+  type="radio"
+  id="domicilioNo"
+  value="no"
+  [(ngModel)]="userData.domicilio"
+  (change)="actualizarTotal()"
+  name="domicilio"
+  class="form-check-input"
+/>
+    <label for="domicilioNo" class="form-check-label">Recoger en tienda</label>
+  </div>
+</div>
 
     <!-- Dirección y mapa -->
     <div *ngIf="userData.domicilio === 'si'" class="mb-3">
@@ -128,8 +134,9 @@
         name="direccion"
         [(ngModel)]="userData.direccion"
         class="form-control"
-        placeholder="Escribe o selecciona en el mapa"
+        placeholder="Selecciona en el mapa"
         required
+        readonly
         #direccion="ngModel"
         autocomplete="off"
       />
@@ -149,29 +156,73 @@
         />
       </div>
     </div>
-    <!-- Método de pago -->
-<select [(ngModel)]="userData.id_pago" name="metodoPago" required #metodoPago="ngModel">
-  <option value="" disabled selected>Selecciona un método de pago</option>
+
+<!-- Campo oculto para valor del domicilio -->
+<input type="hidden" [(ngModel)]="costoDomicilio" name="valorDomicilio" />
+
+<!-- Observaciones (solo si domicilio está activado) -->
+<div *ngIf="userData.domicilio === 'si'" class="mb-4">
+  <label for="observaciones" class="form-label">Observaciones para el domicilio (opcional)</label>
+  <textarea
+    id="observaciones"
+    name="observaciones"
+    class="form-control"
+    [(ngModel)]="userData.observaciones"
+    rows="3"
+    placeholder="Ejemplo: Tocar timbre, dejar con el vigilante, referencia del lugar, etc."
+  ></textarea>
+</div>
+
+
+<!-- Método de Pago -->
+<div class="mb-4">
+  <label for="metodoPago" class="form-label fw-semibold">Método de pago</label>
+ <select
+  id="metodoPago"
+  [(ngModel)]="userData.id_pago"
+  name="metodoPago"
+  required
+  #metodoPago="ngModel"
+  class="form-select shadow-sm"
+>
+  <option [ngValue]="undefined" disabled>Selecciona un método de pago</option>
+
   <option *ngFor="let metodo of metodosPago" [value]="metodo.id_pago">
     {{ metodo.metodo }}
   </option>
 </select>
-<div *ngIf="metodoPago.invalid && metodoPago.touched" class="text-danger">
-  Selecciona un método de pago.
+  <div *ngIf="metodoPago.invalid && metodoPago.touched" class="text-danger mt-1">
+    Selecciona un método de pago.
+  </div>
+</div>
+    <!-- Total a pagar -->
+<div class="mb-4">
+  <label class="form-label fw-semibold">Total a pagar</label>
+<input
+  type="text"
+  [value]="totalPagarCalculado | currency:'COP':'symbol'"
+  readonly
+  class="form-control"
+/>
+
 </div>
 
+<!-- método de envío -->
+<div class="form-group">
+  <label for="metodoEnvio">¿Cómo deseas recibir la confirmación?</label>
+  <select
+    [(ngModel)]="userData.metodoEnvioFactura"
+    name="metodoEnvioFactura"
+    id="metodoEnvio"
+    class="form-control"
+    required
+  >
+    <option value="" disabled selected>Selecciona un método</option>
+    <option value="correo">Correo electrónico</option>
+    <option value="whatsapp">WhatsApp</option>
+  </select>
+</div>
 
-    <!-- Total a pagar -->
-    <div class="mb-3">
-      <label for="totalPagar" class="form-label">Total a pagar</label>
-      <input
-        type="text"
-        id="totalPagar"
-        class="form-control"
-        [value]="totalPagar | currency : 'COP' : 'symbol'"
-        disabled
-      />
-    </div>
 
     <!-- Hora -->
     <div class="mb-3">
@@ -220,18 +271,23 @@
     <ng-container *ngIf="ticketConfirmado; else confirmacionCita">
       <h4 class="mb-3 text-center">¡Cita confirmada!</h4>
 
-      <div
-        class="alert alert-info d-flex align-items-center gap-2 justify-content-center"
-      >
-        <i
-          class="fa-solid fa-clone fa-lg text-primary"
-          style="cursor: pointer"
-          title="Copiar ticket"
-          (click)="copiarAlPortapapeles(ticketGenerado)"
-        >
-        </i>
-        <div><strong>Número de Ticket:</strong> {{ ticketGenerado }}</div>
-      </div>
+      <!-- Ventana emergente para número de ticket -->
+
+ <div
+  class="alert alert-info d-flex align-items-center gap-2 justify-content-center"
+>
+  <div
+    class="d-flex align-items-center"
+    title="Copiar al portapapeles"
+    style="cursor: pointer"
+    (click)="copiarAlPortapapeles(ticketGenerado)"
+  >
+    <i class="fa-solid fa-clone fa-lg text-primary me-1"></i>
+    <span class="text-primary fw-semibold">Copiar</span>
+  </div>
+  <div><strong>Número de Ticket:</strong> {{ ticketGenerado }}</div>
+</div>
+
 
       <div class="text-center mt-3">
         <button class="btn btn-secondary" (click)="cerrarModal()">
@@ -245,33 +301,32 @@
       <h4 class="mb-3">Confirma tu cita</h4>
 
   <ul class="list-unstyled">
-  <li><strong>Nombre:</strong> {{ userData.nombre }}</li>
-  <li><strong>Apellido:</strong> {{ userData.apellido }}</li>
-  <li><strong>Teléfono:</strong> {{ userData.telefono }}</li>
-  <li><strong>Correo:</strong> {{ userData.correo }}</li>
-  
-  <li *ngIf="userData.domicilio === 'si'">
-    <strong>Dirección:</strong> {{ userData.direccion }}
-  </li>
   <li><strong>Fecha:</strong> {{ selectedDate }}</li>
   <li><strong>Hora:</strong> {{ userData.hora }}</li>
   <li><strong>Empresa:</strong> {{ empresaSeleccionada }}</li>
+  <li><strong>Nombre:</strong> {{ userData.nombre + userData.apellido }}</li>  
+  <li><strong>Teléfono:</strong> {{ userData.telefono }}</li>
+  <li><strong>Correo:</strong> {{ userData.correo }}</li>  
+  <li *ngIf="userData.domicilio === 'si'">
+    <strong>Dirección:</strong> {{ userData.direccion }}
+  </li>  
+  <li *ngIf="userData.observaciones">
+  <strong>Observaciones:</strong> {{ userData.observaciones }}
+</li>
   <li><strong>Método de pago:</strong> {{ getNombreMetodoPago() }}</li>
+  <li><strong>Notificación por:</strong> {{ userData.metodoEnvioFactura }}</li>
 
   <li *ngIf="productosSeleccionados.length > 0">
-    <strong>Productos:</strong>
-    <ul>
-      <li *ngFor="let producto of productosSeleccionados">
-        {{ producto }}
-      </li>
-    </ul>
-  </li>
-  <li *ngIf="productosSeleccionados.length === 0">
-    <strong>Productos:</strong> No hay productos seleccionados.
-  </li>
+  <strong>Productos:</strong>
+  <ul>
+    <li *ngFor="let producto of productosSeleccionados">
+      {{ producto.nombre }} - {{ producto.precio | currency:'COP':'symbol' }} x {{ producto.cantidad }} = {{ (producto.precio * producto.cantidad) | currency:'COP':'symbol' }}
+    </li>
+  </ul>
+</li>
+<li><strong>Costo del domicilio:</strong> {{ costoDomicilio | currency:'COP':'symbol' }}</li>
+<li><strong>Total a pagar:</strong> {{ totalPagarCalculado | currency:'COP':'symbol' }}</li>
 </ul>
-
-
       <div class="d-flex gap-2 mt-3">
         <button class="btn btn-success" (click)="confirmAppointment()">
           Confirmar

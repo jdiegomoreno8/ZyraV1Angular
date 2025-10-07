@@ -3,12 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, Observable, of } from 'rxjs';
 import { Empresa } from '../components/data/models/empresa.model';
 import { Product } from '../components/data/models/product.model';
+import { environment } from '../../enviroments/enviroment';
+
+
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://127.0.0.1:8000';
+  private baseUrl = environment.apiUrl;
+  //producción
+  //private baseUrl = environment.apiUrl; //enviroment con el import { environment } from '../../enviroments/enviroment.prod';
 
   constructor(private http: HttpClient) {}
 

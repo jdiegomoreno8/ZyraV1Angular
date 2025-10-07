@@ -11,7 +11,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { faBoxOpen, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 library.add(faBoxOpen, faCalendarAlt);
-// 👇 Registra todos los íconos sólidos (fas)
+//  Registra todos los íconos sólidos (fas)
 library.add(fas);
 
 bootstrapApplication(AppComponent, {

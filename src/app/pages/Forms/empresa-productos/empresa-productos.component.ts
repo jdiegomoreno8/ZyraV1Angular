@@ -19,6 +19,8 @@ export class EmpresaProductosComponent implements OnInit {
   productos: Product[] = [];
   nombreEmpresa: string = '';
   seleccionados: Set<number> = new Set();
+  cantidades: Map<number, number> = new Map();
+
 
   constructor(
     private route: ActivatedRoute,
@@ -46,7 +48,9 @@ export class EmpresaProductosComponent implements OnInit {
         p.nombre,
         p.descripcion,
         `/productos/${p.id_producto}`,
-        this.asignarImagen(p.nombre)
+        this.asignarImagen(p.nombre),
+        p.precio ?? 0,
+        p.cantidad_existente ?? 0
       ));
     },
     error: (error) => {
@@ -73,13 +77,38 @@ export class EmpresaProductosComponent implements OnInit {
   }
 
 irACalendario(): void {
+  const productosConCantidades: string[] = [];
+
+  this.seleccionados.forEach(id => {
+    const cantidad = this.cantidades.get(id) || 1;
+    productosConCantidades.push(`${id}:${cantidad}`);
+  });
+
   this.router.navigate(['/calendar'], {
     queryParams: {
-      empresa: this.idEmpresa, // id_empresa CAMBIADO a empresa para que coincida con calendar.component.ts
+      empresa: this.idEmpresa,
       empresa_nombre: this.nombreEmpresa,
-      productos: Array.from(this.seleccionados).join(',')
+      productos: productosConCantidades.join(',') 
     }
   });
+}
+
+//Sumar y restar cantidades de productos
+sumarCantidad(id_producto: number, stock: number): void {
+  const actual = this.cantidades.get(id_producto) || 1;
+
+  if (actual < stock) {
+    this.cantidades.set(id_producto, actual + 1);
+  }
+}
+
+
+restarCantidad(id_producto: number): void {
+  const actual = this.cantidades.get(id_producto) || 1;
+
+  if (actual > 1) {
+    this.cantidades.set(id_producto, actual - 1);
+  }
 }
 
 

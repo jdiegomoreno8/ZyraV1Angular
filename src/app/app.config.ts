@@ -5,8 +5,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { provideHttpClient } from '@angular/common/http'; // Importar provideHttpClient
 
 export const appConfig: ApplicationConfig = {
-  providers: [
-     provideRouter(routes),
+  providers: [   
     provideHttpClient(), // <-- Añadir este proveedo
     provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes), provideClientHydration(withEventReplay())]
 };

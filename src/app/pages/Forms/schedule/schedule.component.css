@@ -129,3 +129,22 @@
   border-left: 4px solid #0d6efd; /* azul Bootstrap */
   background-color: #f8f9fa;
 }
+/* Estilos del select */
+select.form-select {
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ced4da;
+  background-color: #fff;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+select.form-select:focus {
+  border-color: #3765C8;
+  box-shadow: 0 0 0 0.2rem rgba(55, 101, 200, 0.25);
+}
+/* //hoover effect del modal ticket */
+.alert-info .text-primary:hover {
+  text-decoration: underline;
+}
+
