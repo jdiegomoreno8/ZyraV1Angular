@@ -1,16 +1,62 @@
 <app-breadcrumb pageTitle="Tiendas Categorías"></app-breadcrumb>
 
-<div class="container user-form-container py-4">
-  <h2 class="mb-4 text-center">Selecciona una categoría</h2>
+<div class="container user-form-container py-5">
+  <h2 class="mb-4 text-center fw-bold text-primary">Explora nuestras categorías</h2>
 
-  <div class="row row-cols-1 row-cols-md-2 g-4">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
     <div class="col" *ngFor="let product of products">
-      <div class="card h-100 card-hover" (click)="abrirModal(product)">
-       <img [src]="product.image" class="card-img-top" alt="{{ product.nombre }}" />
-        <div class="card-body">
-          <h5 class="card-title">{{ product.nombre }}</h5>
-          <p class="card-text">{{ product.descripcion }}</p>
+      <div class="product-card card h-100 shadow-sm position-relative" [ngClass]="product.colorClass">
+
+        <!-- Etiqueta flotante -->
+        <div *ngIf="product.badge" class="badge-custom">
+          {{ product.badge }}
         </div>
+
+        <!-- Imagen -->
+        <div class="image-container">
+          <img
+            [src]="product.image"
+            alt="{{ product.nombre }}"
+            class="card-img-top product-image"
+          />
+        </div>
+
+        <!-- Contenido -->
+<h5 class="card-title d-flex justify-content-center align-items-center gap-2">
+  {{ product.nombre }}
+  <!-- Botón tipo link con icono de información y tooltip -->
+  <button 
+    type="button" 
+    class="btn btn-link p-0 m-0 text-decoration-none"
+    tabindex="0"
+    data-bs-toggle="tooltip"
+    [attr.title]="product.descripcion"
+  >
+    <i class="bi bi-info-circle-fill text-info"></i>
+  </button>
+</h5>
+
+
+
+
+
+        <!-- Footer -->
+        <div class="card-footer text-center border-0 bg-transparent">
+          <ng-container *ngIf="loadingProductId !== product.id_producto; else loading">
+            <button
+              class="btn btn-outline-light btn-sm fw-semibold"
+              (click)="abrirModal(product)"
+            >
+              <i class="bi bi-shop-window me-1"></i> Ver Empresas
+            </button>
+          </ng-container>
+
+          <ng-template #loading>
+            <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+            <span class="ms-2 small text-muted">Cargando...</span>
+          </ng-template>
+        </div>
+
       </div>
     </div>
   </div>

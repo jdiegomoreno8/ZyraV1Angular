@@ -1,0 +1,10 @@
+{
+  "SETTINGS": {
+    "TITLE": "Configuración",
+    "DARK_MODE": "Modo oscuro",
+    "LANGUAGE": "Idioma",
+    "SUPPORT": "¿Necesitas ayuda?",
+    "EMAIL": "Soporte por correo",
+    "SMS": "Soporte por SMS"
+  }
+}

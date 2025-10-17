@@ -1,0 +1,102 @@
+<!-- //editar-cita.component.html -->
+<div class="container py-4">
+  <h2>Editar Cita</h2>
+
+  <form *ngIf="citaForm" [formGroup]="citaForm" (ngSubmit)="guardarCambios()">
+    <div class="row">
+      <div class="col-md-6">
+        <label>Nombre</label>
+        <input class="form-control" formControlName="nombre" />
+      </div>
+      <div class="col-md-6">
+        <label>Apellido</label>
+        <input class="form-control" formControlName="apellido" />
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <label>Teléfono</label>
+        <input class="form-control" formControlName="telefono" />
+      </div>
+      <div class="col-md-6">
+        <label>Correo</label>
+        <input class="form-control" formControlName="correo" />
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-8">
+        <label>Dirección</label>
+        <input class="form-control" formControlName="direccion" />
+      </div>
+      <div class="col-md-4">
+        <label>Domicilio</label>
+        <select class="form-control" formControlName="domicilio">
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <label>Fecha</label>
+        <input type="date" class="form-control" formControlName="fecha" />
+      </div>
+      <div class="col-md-6">
+        <label>Hora</label>
+        <input type="time" class="form-control" formControlName="hora" />
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h5>Productos</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody formArrayName="productos">
+          <tr *ngFor="let producto of productos.controls; let i = index" [formGroupName]="i">
+            <td><input class="form-control" formControlName="nombre" /></td>
+            <td><input class="form-control" type="number" formControlName="precio_unitario" (input)="calcularTotales()" /></td>
+            <td><button class="btn btn-danger" type="button" (click)="quitarProducto(i)">Eliminar</button></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="btn btn-secondary" type="button" (click)="agregarProducto()">Agregar Producto</button>
+    </div>
+
+    <div class="mt-4">
+      <label>Observaciones</label>
+      <textarea class="form-control" formControlName="observaciones" rows="3"></textarea>
+    </div>
+
+    <div class="mt-3">
+      <p><strong>Cantidad de productos:</strong> {{ productos.length }}</p>
+      <p><strong>Subtotal:</strong> ${{ citaForm.value.valor_productos || 0 }}</p>
+      <p><strong>Total a pagar:</strong> ${{ citaForm.value.total_pagar || 0 }}</p>
+    </div>
+
+    <div class="mt-4">
+   <button
+  class="btn btn-primary"
+  type="submit"
+  [disabled]="loading || !formModificado || citaForm.invalid"
+>
+  Guardar Cambios
+</button>
+
+      <a class="btn btn-secondary ms-2" routerLink="/">Cancelar</a>
+    </div>
+
+    <div *ngIf="mensaje" class="alert alert-info mt-3">
+      {{ mensaje }}
+    </div>
+  </form>
+</div>

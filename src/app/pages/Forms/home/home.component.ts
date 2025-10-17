@@ -1,9 +1,8 @@
+//home.component.ts
 import { Component } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { BreadcrumbComponent } from '../../../components/breadcrumb/breadcrumb.component';
-
 
 @Component({
   selector: 'app-home',
@@ -13,22 +12,19 @@ import { BreadcrumbComponent } from '../../../components/breadcrumb/breadcrumb.c
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent {
-  isLoading = false;  //Variable para manejar el estado del spinner
+  isLoading = false;
+  loadingTarget: string | null = null;  // ← Nueva variable
 
   constructor(private router: Router) {}
 
   go(path: string) {
-    this.isLoading = true; // Activar el spinner
+    this.isLoading = true;
+    this.loadingTarget = path;
 
-    // Simular carga (por ejemplo, llamada a la base de datos)
     setTimeout(() => {
-      this.isLoading = false; // Ocultar spinner después del "cargado"
+      this.isLoading = false;
+      this.loadingTarget = null;
       this.router.navigate([path]);
-    }, 2000); // 2 segundos
+    }, 2000);
   }
-
-  next(path: string){
-    this.router.navigate([path]);
-  }
-
 }

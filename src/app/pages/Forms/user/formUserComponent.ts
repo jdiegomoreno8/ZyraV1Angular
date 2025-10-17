@@ -1,48 +1,95 @@
-import { Component } from '@angular/core'; 
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { BreadcrumbComponent } from "../../../components/breadcrumb/breadcrumb.component";
-import { Product } from '../../../components/data/models/product.model';
+// formUser.component.ts
+
+import {
+  Component,
+  AfterViewInit,
+  Inject,
+  PLATFORM_ID,
+  ElementRef 
+} from '@angular/core';
+import { CommonModule, isPlatformBrowser, NgClass  } from '@angular/common'; // <--- Importante
 import { PRODUCTS } from '../../../components/data/datamodel/product';
-import { ApiService } from '../../../services/api.service';  // Asegúrate de que este servicio esté bien configurado
-import { MatDialog } from '@angular/material/dialog'; //inyección de MatDialog
-import { MatDialogModule } from '@angular/material/dialog';
-import { ProductEmpresasDialogComponent } from "../../../components/product-empresas-dialog/product-empresas-dialog.component";
+import { Router } from '@angular/router';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ApiService } from '../../../services/api.service';
+import { Product } from '../../../components/data/models/product.model';
+import { ProductEmpresasDialogComponent } from '../../../components/product-empresas-dialog/product-empresas-dialog.component';
+import { BreadcrumbComponent } from "../../../components/breadcrumb/breadcrumb.component";
+
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-form-user',
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent, MatDialogModule],
-  templateUrl: './formUserComponent.html',
-  styleUrls: ['./formUserComponent.css']
+  templateUrl: './formUserComponent.html', // ✅ Asegúrate de que este archivo exista
+  styleUrls: ['./formUserComponent.css'],
+  imports: [BreadcrumbComponent, NgClass, MatDialogModule, CommonModule ],  
 })
-export class FormUserComponent {
-  products: Product[] = PRODUCTS;
+export class FormUserComponent implements AfterViewInit {
+  products = PRODUCTS;
+  loadingProductId: number | null = null;
 
   constructor(
     private router: Router,
-    private dialog: MatDialog,  // Inyectamos MatDialog
-    private productoEmpresaService: ApiService  // Inyectamos ApiService para consultar las empresas
+    private elRef: ElementRef,
+    private dialog: MatDialog,
+    private productoEmpresaService: ApiService,
+    @Inject(PLATFORM_ID) private platformId: Object // <- Agregamos el token del entorno
   ) {}
 
-  // Método para abrir el modal con las empresas asociadas a un producto
-  abrirModal(product: Product) {
-    // Usamos el servicio ApiService para obtener las empresas asociadas a este producto
-    this.productoEmpresaService.getEmpresasPorProducto(product.id_producto).subscribe({
-      next: (empresas) => {
-        this.dialog.open(ProductEmpresasDialogComponent, {
-          width: '80vw',
-          maxWidth: '400px',
-          data: {  // Pasamos el título y las empresas al modal
-            title: product.nombre,
-            descripcion: product.descripcion,
-            empresas: empresas
+  ngAfterViewInit(): void {
+        // Inicializar tooltips de Bootstrap
+    const tooltipTriggerList = this.elRef.nativeElement.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach((tooltipTriggerEl: HTMLElement) => {
+      new bootstrap.Tooltip(tooltipTriggerEl, {
+  trigger: 'hover focus'
+});
+    });
+    if (isPlatformBrowser(this.platformId)) {
+      // ✅ Solo ejecutamos este código si estamos en el navegador
+      setTimeout(() => {
+        const tooltipTriggerList = Array.from(
+          document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+        tooltipTriggerList.forEach((tooltipTriggerEl: any) => {
+          try {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+          } catch (err) {
+            console.error('Error inicializando tooltip:', err);
           }
         });
-      },
-      error: (err) => {
-        console.error('Error obteniendo empresas:', err);
-      }
-    });
+      }, 0);
+    }
+  }
+
+  abrirModal(product: Product) {
+    this.loadingProductId = product.id_producto;
+
+    setTimeout(() => {
+      setTimeout(() => {
+        this.productoEmpresaService
+          .getEmpresasPorProducto(product.id_producto)
+          .subscribe({
+            next: (empresas) => {
+              this.loadingProductId = null;
+              this.dialog.open(ProductEmpresasDialogComponent, {
+                width: '80vw',
+                maxWidth: '400px',
+                enterAnimationDuration: '300ms',
+                exitAnimationDuration: '200ms',
+                data: {
+                  title: product.nombre,
+                  descripcion: product.descripcion,
+                  empresas: empresas,
+                },
+              });
+            },
+            error: (err) => {
+              this.loadingProductId = null;
+              console.error('Error obteniendo empresas:', err);
+            },
+          });
+      }, 800);
+    }, 0);
   }
 }

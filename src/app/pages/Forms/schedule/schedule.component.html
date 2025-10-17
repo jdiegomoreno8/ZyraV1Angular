@@ -69,7 +69,7 @@
         id="telefono"
         name="telefono"
         [(ngModel)]="userData.telefono"
-        pattern="^[0-9+() \-]{7,15}$"
+        pattern="^\+?[0-9]{7,15}$"
         class="form-control"
         required
         #telefono="ngModel"
@@ -99,28 +99,28 @@
     <!-- Domicilio -->
 <div class="mb-4">
   <label class="form-label fw-semibold">¿Cómo deseas recibir tu servicio?</label>
-    <div class="form-check form-check-inline">
-<input
-  type="radio"
-  id="domicilioSi"
-  value="si"
-  [(ngModel)]="userData.domicilio"
-  (change)="resetMapaDomicilio(); actualizarTotal()"
-  name="domicilio"
-  class="form-check-input"
-/>
+  <div class="form-check form-check-inline">
+    <input
+      type="radio"
+      id="domicilioSi"
+      name="domicilio"
+      value="si"
+      [(ngModel)]="userData.domicilio"
+      (change)="onMetodoEntregaChange()"
+      class="form-check-input"
+    />
     <label for="domicilioSi" class="form-check-label">Domicilio</label>
   </div>
   <div class="form-check form-check-inline">
-<input
-  type="radio"
-  id="domicilioNo"
-  value="no"
-  [(ngModel)]="userData.domicilio"
-  (change)="actualizarTotal()"
-  name="domicilio"
-  class="form-check-input"
-/>
+    <input
+      type="radio"
+      id="domicilioNo"
+      name="domicilio"
+      value="no"
+      [(ngModel)]="userData.domicilio"
+      (change)="onMetodoEntregaChange()"
+      class="form-check-input"
+    />
     <label for="domicilioNo" class="form-check-label">Recoger en tienda</label>
   </div>
 </div>
@@ -219,7 +219,7 @@
   >
     <option value="" disabled selected>Selecciona un método</option>
     <option value="correo">Correo electrónico</option>
-    <option value="whatsapp">WhatsApp</option>
+    <option value="sms">Mensaje de texto</option>
   </select>
 </div>
 
@@ -306,12 +306,13 @@
   <li><strong>Empresa:</strong> {{ empresaSeleccionada }}</li>
   <li><strong>Nombre:</strong> {{ userData.nombre + userData.apellido }}</li>  
   <li><strong>Teléfono:</strong> {{ userData.telefono }}</li>
-  <li><strong>Correo:</strong> {{ userData.correo }}</li>  
+  <li><strong>Correo:</strong> {{ userData.correo }}</li> 
+  <li><strong>Distancia en km:</strong> {{ userData.distancia_km }}</li>   
   <li *ngIf="userData.domicilio === 'si'">
     <strong>Dirección:</strong> {{ userData.direccion }}
   </li>  
   <li *ngIf="userData.observaciones">
-  <strong>Observaciones:</strong> {{ userData.observaciones }}
+  <strong>Observaciones:</strong> {{ userData.observaciones }} 
 </li>
   <li><strong>Método de pago:</strong> {{ getNombreMetodoPago() }}</li>
   <li><strong>Notificación por:</strong> {{ userData.metodoEnvioFactura }}</li>

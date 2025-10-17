@@ -1,4 +1,36 @@
-.container {
-  text-align: center;
-  margin-top: 50px;
+.settings-container {
+  max-width: 500px;
+  margin: auto;
+  padding: 2rem;
+  background: var(--background, #fff);
+  color: var(--text, #000);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.setting-item {
+  margin-bottom: 1.5rem;
+}
+
+.support-section button {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  width: 100%;
+  background-color: #f1f1f1;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.support-section button:hover {
+  background-color: #ddd;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+  --background: #121212;
+  --text: #e0e0e0;
+  background-color: #121212;
+  color: #e0e0e0;
 }

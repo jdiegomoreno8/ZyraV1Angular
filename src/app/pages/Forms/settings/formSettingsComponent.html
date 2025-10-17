@@ -1,4 +1,24 @@
-<div class="container">
-  <h2>Pantalla de Ajustes</h2>
-  <p>Opciones de configuración...</p>
+<div class="settings-container">
+  <h2>{{ 'SETTINGS.TITLE' | translate }}</h2>
+
+  <div class="setting-item">
+    <label>
+      <input type="checkbox" [checked]="isDarkMode" (change)="toggleDarkMode()" />
+      {{ 'SETTINGS.DARK_MODE' | translate }}
+    </label>
+  </div>
+
+  <div class="setting-item">
+    <label for="language">{{ 'SETTINGS.LANGUAGE' | translate }}</label>
+    <select id="language" [(ngModel)]="selectedLang" (change)="changeLanguage(selectedLang)">
+      <option value="es">Español</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
+  <div class="setting-item support-section">
+    <p>{{ 'SETTINGS.SUPPORT' | translate }}</p>
+    <button (click)="sendEmail()">✉️ {{ 'SETTINGS.EMAIL' | translate }}</button>
+    <button (click)="sendSMS()">📨 {{ 'SETTINGS.SMS' | translate }}</button>
+  </div>
 </div>

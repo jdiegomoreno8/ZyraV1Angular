@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+
 import { ToastrModule, ToastrService } from 'ngx-toastr';
 import { BreadcrumbComponent } from '../../../components/breadcrumb/breadcrumb.component';
 import { Cita, CitaService } from '../../../services/cita.service';
@@ -54,6 +55,7 @@ export class ScheduleComponent implements AfterViewChecked {
     correo: '',
     domicilio: 'no', // "si" activa el mapa
     direccion: '',
+    distancia_km:0,
     hora: '',
     id_pago: '', // <- puede ser string si viene del select
     observaciones:'',
@@ -95,7 +97,7 @@ export class ScheduleComponent implements AfterViewChecked {
   // Datos de la empresa
   //readonly tiendaLatLng = { lat: 6.1788091, lng: -75.6009626 };
   tiendaLatLng = {lat: 0, lng: 0};
-  distanciaKm: number = 0;
+  distancia_km: number = 0;
 
   // ─── Constructor ───────────────────────────────────────────────────────────
   constructor(
@@ -227,74 +229,68 @@ async ngAfterViewChecked(): Promise<void> {
     });
 
     // Evento: lugar seleccionado desde autocomplete
-    this.autocomplete.addListener('place_changed', () => {
-      //Revisar logs
-      console.log('place_changed evento disparado');
-      const place = this.autocomplete!.getPlace();
-      if (!isPlaceWithGeometry(place)) return;
+this.autocomplete.addListener('place_changed', () => {
+  console.log('place_changed evento disparado');
+  if (this.userData.domicilio !== 'si') return; //Validación
 
-      const location = place.geometry.location;
-      if (!location) return;
+  const place = this.autocomplete!.getPlace();
+  if (!isPlaceWithGeometry(place)) return;
 
-      this.zone.run(() => {
-        this.map!.setCenter(location);
-        this.map!.setZoom(15);
-        this.marker!.setPosition(location);
-        this.userData.direccion = place.formatted_address ?? '';
-        // Aquí va el cálculo de distancia y costo
-        this.calcularDistanciaYCosto();
-      });
-    });
+  const location = place.geometry.location;
+  if (!location) return;
+
+  this.zone.run(() => {
+    this.map!.setCenter(location);
+    this.map!.setZoom(15);
+    this.marker!.setPosition(location);
+    this.userData.direccion = place.formatted_address ?? '';
+    this.calcularDistanciaYCosto();
+  });
+});
+
 
     // Evento: marcador arrastrado manualmente
-    this.marker.addListener('dragend', () => {
-      //Revisar logs
-      console.log('dragend evento disparado');
-      const pos = this.marker!.getPosition();
-      if (!pos) return;
+ this.marker.addListener('dragend', () => {
+  if (this.userData.domicilio !== 'si') return; // Validación
 
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: pos }, (results, status) => {
-        if (status === 'OK' && results && results[0]) {
-          this.zone.run(() => {
-            this.userData.direccion = results[0].formatted_address;
+  const pos = this.marker!.getPosition();
+  if (!pos) return;
 
-            // Cálculo de distancia y costo
-            this.calcularDistanciaYCosto();
-          });
-        } else {
-          this.zone.run(() => {
-            this.userData.direccion = `${pos.lat().toFixed(6)}, ${pos
-              .lng()
-              .toFixed(6)}`;
-            // Cálculo también si hay coordenadas sin dirección
-            this.calcularDistanciaYCosto();
-          });
-        }
-      });
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ location: pos }, (results, status) => {
+    this.zone.run(() => {
+      if (status === 'OK' && results && results[0]) {
+        this.userData.direccion = results[0].formatted_address;
+      } else {
+        this.userData.direccion = `${pos.lat().toFixed(6)}, ${pos.lng().toFixed(6)}`;
+      }
+
+      this.calcularDistanciaYCosto();
     });
+  });
+});
+
 
     // Evento: click en el mapa
-    this.map.addListener('click', (e: google.maps.MapMouseEvent) => {
-      //Revisar logs
-      console.log('map click evento disparado', e.latLng);
-      if (!e.latLng) return;
+this.map.addListener('click', (e: google.maps.MapMouseEvent) => {
+  console.log('map click evento disparado', e.latLng);
+  if (!e.latLng || this.userData.domicilio !== 'si') return; //Validación
 
-      const latlng = e.latLng;
-      this.marker!.setPosition(latlng);
-      this.map!.setCenter(latlng);
+  const latlng = e.latLng;
+  this.marker!.setPosition(latlng);
+  this.map!.setCenter(latlng);
 
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: latlng }, (results, status) => {
-        if (status === 'OK' && results && results[0]) {
-          this.zone.run(() => {
-            this.userData.direccion = results[0].formatted_address;
-            //  Cálculo
-            this.calcularDistanciaYCosto();
-          });
-        }
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ location: latlng }, (results, status) => {
+    if (status === 'OK' && results && results[0]) {
+      this.zone.run(() => {
+        this.userData.direccion = results[0].formatted_address;
+        this.calcularDistanciaYCosto();
       });
-    });
+    }
+  });
+});
+
   }
   // ─── Conversión calculo costo domicilio ────────────────────────────────────────────────────
 
@@ -331,7 +327,7 @@ async ngAfterViewChecked(): Promise<void> {
     const distanciaKm = distanciaMetros / 1000;
     const costoDomicilio = this.calcularCostoDomicilio(distanciaKm);
 
-    this.distanciaKm = distanciaKm;
+    this.distancia_km = distanciaKm;
     this.costoDomicilio = costoDomicilio;
 
     console.log(
@@ -599,7 +595,7 @@ submitForm(): void {
       id_producto: p.id_producto,
       cantidad: p.cantidad,
     })),
-    distancia_km: this.distanciaKm,
+    distancia_km: this.distancia_km,
     costo_domicilio: this.costoDomicilio,
     id_pago: +this.userData.id_pago,
     observaciones: this.userData.observaciones || '',
@@ -702,6 +698,7 @@ this.selectedProductIds = this.productosSeleccionados.map(p => p.id_producto);
       correo: '',
       domicilio: 'no',
       direccion: '',
+      distancia_km:0,
       hora: '',
       id_pago: '',
       observaciones:'',
@@ -709,16 +706,46 @@ this.selectedProductIds = this.productosSeleccionados.map(p => p.id_producto);
     };
     this.citaParaConfirmar = undefined!;
   }
+
+  
   /**Resetear el mapa */
   resetMapaDomicilio(): void {
     this.mapInitialized = false;
     this.map = undefined;
     this.marker = undefined;
     this.costoDomicilio = 0;
-    this.distanciaKm = 0;
+    this.distancia_km = 0;
     this.userData.direccion = '';
 
   }
+/**
+   * Reinicia los campos del valor domicilio y distancia Km.
+   */
+  
+limpiarDatosDomicilio(): void {
+  this.userData.direccion = '';
+  this.userData.distancia_km = 0;
+  this.userData.observaciones = '';
+  this.costoDomicilio = 0;
+}
+
+onMetodoEntregaChange(): void {
+ if (this.userData.domicilio === 'no') {
+    this.userData.direccion = 'tienda'; // o '', si el backend lo prefiere vacío
+    this.distancia_km = 0;
+    this.costoDomicilio = 0;
+    this.userData.observaciones = '';
+    //   this.limpiarDatosDomicilio();
+    // this.resetMapaDomicilio();
+  } else if (this.userData.domicilio === 'si') {
+    this.limpiarDatosDomicilio();
+    this.resetMapaDomicilio();
+    
+  }
+
+  this.actualizarTotal();
+}
+
 
   /**
    * Cancela la ventana de confirmación sin enviar la cita.

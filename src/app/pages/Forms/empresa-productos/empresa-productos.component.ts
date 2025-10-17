@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ApiService } from '../../../services/api.service';
 import { Product } from '../../../components/data/models/product.model';
 import { BreadcrumbComponent } from "../../../components/breadcrumb/breadcrumb.component";
@@ -10,7 +9,7 @@ import { BreadcrumbComponent } from "../../../components/breadcrumb/breadcrumb.c
 @Component({
   selector: 'app-empresa-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, FontAwesomeModule, BreadcrumbComponent],
+  imports: [CommonModule, FormsModule,  BreadcrumbComponent],
   templateUrl: './empresa-productos.component.html',
   styleUrls: ['./empresa-productos.component.css']
 })

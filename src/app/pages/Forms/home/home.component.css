@@ -1,75 +1,56 @@
-.menu-container {
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-}
-
-button {
-  padding: 12px 24px;
-  font-size: 18px;
-  border-radius: 8px;
+/* home.component.css */
+.menu-tile {
+  background-color: white;
+  border-radius: 15px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  width: 100%; /* IMPORTANTE para que se ajuste al contenedor */
- background-color: #3765C8;
-}
-
-button:hover {
-  background-color: #4730B0;
-}
-
-.btn-animate {
   transition: transform 0.2s ease, box-shadow 0.3s ease;
+  min-height: 220px;
 }
 
-.btn-animate:hover,
-.btn-animate:focus {
-  transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  outline: none;
+.menu-tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Estilo base: texto negro en todos los botones */
-button.btn {
-  color: black !important;
+.menu-tile .icon {
+  font-size: 3rem;
+  color: #3765C8;
+  margin-bottom: 12px;
 }
 
-button.btn i {
-  color: black !important;
+.menu-tile h5 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
 }
 
-/* Hover en desktop */
-button.btn:hover,
-button.btn:hover i {
-  color: white !important;
+.menu-tile p {
+  color: #666;
+  font-size: 0.95rem;
 }
 
-/*  Active/focus para móvil o cuando se toca el botón */
-button.btn:active,
-button.btn:focus,
-button.btn:active i,
-button.btn:focus i {
-  color: white !important;
+.menu-tile.loading {
+  pointer-events: none;
+  opacity: 0.6;
 }
 
-/*  Mejora en pantallas pequeñas (opcional para reforzar accesibilidad) */
+/* Responsive: reduce tamaño en móviles */
 @media (max-width: 768px) {
-  button.btn {
-    transition: background-color 0.3s ease, color 0.3s ease;
+  .menu-tile {
+    padding: 20px;
   }
 
-  button.btn:active,
-  button.btn:focus {
-    background-color: #343a40; /* puedes ajustar según color de fondo deseado */
-    color: white !important;
+  .menu-tile .icon {
+    font-size: 2.5rem;
   }
 
-  button.btn:active i,
-  button.btn:focus i {
-    color: white !important;
+  .menu-tile h5 {
+    font-size: 1.1rem;
   }
 }
+.menu-tile {
+  transition: all 0.3s ease-in-out;
+}
+

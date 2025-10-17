@@ -1,0 +1,240 @@
+<!-- history.component.html -->
+<div class="container py-4">
+  <h2 class="mb-4 text-center">Buscar Cita por Número de Ticket</h2>
+
+  <div class="row mb-4 justify-content-center">
+    <div class="col-md-6">
+      <input
+        type="text"
+        [(ngModel)]="ticketInput"
+        placeholder="Ingresa número de ticket"
+        class="form-control form-control-lg shadow-sm"
+        (keydown.enter)="buscarCita()"
+      />
+    </div>
+    <div class="col-auto d-flex align-items-center gap-2">
+      <button
+        class="btn btn-primary btn-lg"
+        (click)="buscarCita()"
+        [disabled]="loading || !ticketInput.trim()"
+      >
+        <i class="fas fa-search"></i> Buscar
+      </button>
+      <button class="btn btn-outline-secondary btn-lg" (click)="limpiarModalCodigo()">
+        <i class="fas fa-times"></i> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Spinner mientras carga -->
+  <div *ngIf="loading" class="text-center my-4">
+    <div class="spinner-border text-primary" role="status" aria-label="Cargando">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Mostrar error si existe -->
+  <div *ngIf="error" class="alert alert-danger text-center">
+    {{ error }}
+  </div>
+
+  <!-- Modal Detalle Cita -->
+  <div
+    class="modal fade"
+    id="citaModal"
+    tabindex="-1"
+    aria-labelledby="citaModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title" id="citaModalLabel">
+            Detalle de Cita - Datos de Usuario
+          </h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+            (click)="limpiarModalCodigo()"
+          ></button>
+        </div>
+        <div class="modal-body" *ngIf="cita">
+          <div class="row mb-3">
+            <div class="col-sm-6">
+              <strong>Cliente:</strong> {{ cita.nombre }} {{ cita.apellido }}<br />
+              <strong>Teléfono:</strong> {{ cita.telefono }}<br />
+              <strong>Correo:</strong> {{ cita.correo }}<br />
+              <strong>Estado de la Cita:</strong>
+              <span
+                [ngClass]="{
+                  'text-success': cita.estado === 'activa',
+                  'text-warning': cita.estado === 'modificada',
+                  'text-danger': cita.estado === 'anulada'
+                }"
+              >
+                {{ cita.estado || 'No disponible' }}
+              </span>
+            </div>
+            <div class="col-sm-6 text-end">
+              <strong>N° Ticket:</strong> {{ cita.numero_ticket }}<br />
+              <strong>Fecha:</strong> {{ cita.fecha }}<br />
+              <strong>Hora:</strong> {{ cita.hora }}
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-sm-6">
+              <strong>Dirección:</strong> {{ cita.direccion }}<br />
+              <strong>Domicilio:</strong> {{ cita.domicilio }}<br />
+              <ng-container *ngIf="cita.distancia_km">
+                <strong>Distancia:</strong> {{ cita.distancia_km }} km<br />
+                <strong>Costo Domicilio:</strong> ${{ cita.costo_domicilio }}
+              </ng-container>
+            </div>
+            <div class="col-sm-6">
+              <strong>Empresa:</strong> {{ cita.empresa?.nombre || 'N/A' }}<br />
+              <strong>Método de Pago:</strong> {{ cita.pago?.metodo || 'N/A' }}
+            </div>
+          </div>
+
+          <hr />
+          <h6>Productos</h6>
+          <table class="table table-bordered table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Producto</th>
+                <th>Precio Unitario</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let prod of cita.productos; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ prod.nombre || 'Producto' }}</td>
+                <td>${{ prod.precio_unitario }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="text-end">
+            <p><strong>Cantidad de Productos:</strong> {{ cita.cantidad_productos || cita.productos?.length }}</p>
+            <p><strong>Subtotal:</strong> ${{ cita.valor_productos || 0 }}</p>
+            <p><strong>Total a Pagar:</strong> ${{ cita.total_pagar || 0 }}</p>
+          </div>
+
+          <hr />
+          <p><strong>Observaciones:</strong> {{ cita.observaciones || 'Sin observaciones.' }}</p>
+
+          <!-- Botones de Acción -->
+          <div class="d-flex justify-content-end mt-3 gap-2">
+            <button
+              class="btn btn-warning"
+              [disabled]="cita.estado === 'modificada'"
+              (click)="abrirModalCodigo('editar')"
+              type="button"
+            >
+              Editar
+            </button>
+
+            <button class="btn btn-danger" (click)="abrirModalCodigo('anular')" type="button">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Código de Validación -->
+  <div
+    class="modal fade"
+    id="codigoModal"
+    tabindex="-1"
+    aria-labelledby="codigoModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="codigoModalLabel">Validar Código de Cita</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+            (click)="limpiarModalCodigo()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>Ingresa el código secreto para continuar con la acción.</p>
+          <input
+            #inputCodigo
+            type="text"
+            class="form-control"
+            [(ngModel)]="codigoIngresado"
+            placeholder="Código de validación"
+            (keydown.enter)="validarCodigo()"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div *ngIf="errorCodigo" class="text-danger mt-2">{{ errorCodigo }}</div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+            (click)="limpiarModalCodigo()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="validarCodigo()"
+            [disabled]="loadingCodigo"
+          >
+            Validar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Cita Anulada -->
+  <div
+    class="modal fade"
+    id="citaAnuladaModal"
+    tabindex="-1"
+    aria-labelledby="citaAnuladaModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="citaAnuladaModalLabel">Cita Anulada</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body text-center">
+          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+          <p class="fs-5">
+            Esta cita ha sido anulada y no se puede modificar.
+          </p>
+          <p><strong>Ticket:</strong> {{ cita?.numero_ticket }}</p>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
