@@ -94,7 +94,7 @@ irACalendario(): void {
 
 //Sumar y restar cantidades de productos
 sumarCantidad(id_producto: number, stock: number): void {
-  const actual = this.cantidades.get(id_producto) || 1;
+  const actual = this.cantidades.get(id_producto) || 1; 
 
   if (actual < stock) {
     this.cantidades.set(id_producto, actual + 1);

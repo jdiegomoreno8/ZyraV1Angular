@@ -7,38 +7,32 @@
     <div class="col" *ngFor="let product of products">
       <div class="product-card card h-100 shadow-sm position-relative" [ngClass]="product.colorClass">
 
-        <!-- Etiqueta flotante -->
+        <!-- Badge flotante -->
         <div *ngIf="product.badge" class="badge-custom">
           {{ product.badge }}
         </div>
 
-        <!-- Imagen -->
-        <div class="image-container">
-          <img
-            [src]="product.image"
-            alt="{{ product.nombre }}"
-            class="card-img-top product-image"
-          />
+        <!-- Icono central en lugar de imagen -->
+        <div class="icon-container">
+          <i [class]="product.iconClass"></i>
         </div>
 
         <!-- Contenido -->
-<h5 class="card-title d-flex justify-content-center align-items-center gap-2">
-  {{ product.nombre }}
-  <!-- Botón tipo link con icono de información y tooltip -->
-  <button 
-    type="button" 
-    class="btn btn-link p-0 m-0 text-decoration-none"
-    tabindex="0"
-    data-bs-toggle="tooltip"
-    [attr.title]="product.descripcion"
-  >
-    <i class="bi bi-info-circle-fill text-info"></i>
-  </button>
-</h5>
-
-
-
-
+        <div class="card-body text-center">
+          <h5 class="card-title d-flex justify-content-center align-items-center gap-2">
+            {{ product.nombre }}
+            <!-- Tooltip info -->
+            <button 
+              type="button" 
+              class="btn btn-link p-0 m-0 text-decoration-none"
+              tabindex="0"
+              data-bs-toggle="tooltip"
+              [attr.title]="product.descripcion"
+            >
+              <i class="bi bi-info-circle-fill text-info"></i>
+            </button>
+          </h5>
+        </div>
 
         <!-- Footer -->
         <div class="card-footer text-center border-0 bg-transparent">

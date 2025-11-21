@@ -1,92 +1,114 @@
 <app-breadcrumb pageTitle="Productos"></app-breadcrumb>
+
 <div class="container mt-4">
-  <h2 class="text-center mb-4">Productos disponibles</h2>
-  <div class="row">
+  <h2 class="text-center mb-4 fw-semibold">
+    <i class="bi bi-bag-check-fill text-primary me-2"></i> Productos disponibles
+  </h2>
+
+  <div class="row g-4">
     <div
-      class="col-md-4 mb-4"
+      class="col-sm-6 col-md-4 col-lg-3"
       *ngFor="let producto of productos"
-      (click)="toggleSeleccion(producto.id_producto)"
     >
       <div
-        class="flip-card producto-card shadow-sm"
-        [class.seleccionado]="seleccionados.has(producto.id_producto)"
+        class="card producto-card shadow-sm border-0 h-100"
+        [ngClass]="{ 'seleccionado': seleccionados.has(producto.id_producto) }"
       >
-        <div class="flip-card-inner">
-          <!-- Parte frontal -->
-          <div class="flip-card-front">
-            <img
-              [src]="producto.image || 'assets/images/productos/4.jpg'"
-              alt="{{ producto.nombre }}"
-              class="img-fluid"
-            />
+        <!-- Imagen del producto -->
+        <img
+          [src]="producto.image || 'assets/images/productos/placeholder.jpg'"
+          alt="{{ producto.nombre }}"
+          class="card-img-top producto-img"
+        />
+
+        <!-- Cuerpo de la tarjeta -->
+        <div class="card-body text-center">
+          <h5 class="card-title fw-semibold mb-2">{{ producto.nombre }}</h5>
+          <p class="card-text text-muted small mb-2">{{ producto.descripcion }}</p>
+
+          <!-- Stock -->
+          <div
+            class="text-center mb-2"
+            [ngClass]="{
+              'text-danger fw-bold': (producto.cantidad_existente ?? 0) < 5,
+  'text-success': (producto.cantidad_existente ?? 0) >= 5
+            }"
+          >
+            <i class="bi bi-box-seam"></i>
+            Stock: {{ producto.cantidad_existente ?? 'No disponible' }}
           </div>
-          <!-- Parte trasera -->
-          <div class="flip-card-back">
-            <h5 class="card-title">
-              <i class="fas fa-box-open me-2"></i> {{ producto.nombre }}
-            </h5>
-            <p class="card-text descripcion">{{ producto.descripcion }}</p>
-            <label
-              class="info-label cantidad"
-              [ngClass]="{
-                'low-stock':
-                  producto.cantidad_existente !== undefined &&
-                  producto.cantidad_existente < 5
-              }"
-            >
-              <i class="fas fa-cubes me-1"></i> Stock:
-              {{ producto.cantidad_existente ?? "No disponible" }}
-            </label>
-            <label class="info-label precio">
-              <i class="fas fa-dollar-sign me-1"></i> Precio: ${{
-                producto.precio
-              }}
-            </label>
-            <!-- Botón restar -->
+
+          <!-- Precio -->
+          <h6 class="text-primary fw-bold mb-3">
+            <i class="bi bi-currency-dollar"></i>
+            {{ producto.precio | currency: 'COP':'symbol':'1.0-0' }}
+          </h6>
+
+          <!-- Controles de cantidad -->
+          <div class="cantidad-control d-flex justify-content-center align-items-center gap-2">
             <button
-              class="btn btn-sm btn-outline-secondary me-2"
-              (click)="
-                restarCantidad(producto.id_producto); $event.stopPropagation()
-              "
+              class="btn btn-outline-secondary btn-sm"
+              (click)="restarCantidad(producto.id_producto); $event.stopPropagation()"
             >
-              <i class="fas fa-minus"></i>
+              <i class="bi bi-dash-lg"></i>
             </button>
-            <!-- Mostrar cantidad -->
-            <span class="cantidad-numero">
+
+            <span class="fw-bold fs-6">
               {{ cantidades.get(producto.id_producto) || 1 }}
             </span>
-            <!-- Botón sumar -->
+
             <button
-              class="btn btn-sm btn-outline-primary ms-2"
-              (click)="
-                sumarCantidad(
-                  producto.id_producto,
-                  producto.cantidad_existente ?? 0
-                );
-                $event.stopPropagation()
-              "
+              class="btn btn-outline-primary btn-sm"
+              (click)="sumarCantidad(producto.id_producto, producto.cantidad_existente ?? 0); $event.stopPropagation()"
             >
-              <i class="fas fa-plus"></i>
+              <i class="bi bi-plus-lg"></i>
             </button>
           </div>
+
+          <!-- Botón seleccionar -->
+          <button
+            class="btn mt-3 w-100"
+            [ngClass]="
+              seleccionados.has(producto.id_producto)
+                ? 'btn-success'
+                : 'btn-outline-success'
+            "
+            (click)="toggleSeleccion(producto.id_producto)"
+          >
+            <i
+              class="bi"
+              [ngClass]="
+                seleccionados.has(producto.id_producto)
+                  ? 'bi-check-circle-fill'
+                  : ''
+              "
+            ></i>
+            {{
+              seleccionados.has(producto.id_producto)
+                ? 'Seleccionado'
+                : 'Agregar'
+            }}
+          </button>
         </div>
       </div>
     </div>
   </div>
-  <!-- Botón para continuar -->
-  <div class="d-flex justify-content-center mt-4">
-    <div class="position-relative">
-      <!-- Burbuja de cantidad -->
-      <span class="badge-count" *ngIf="seleccionados.size > 0">
-        {{ seleccionados.size }}
-      </span>
-      <button
-        class="btn btn-success"
-        [disabled]="seleccionados.size === 0"
-        (click)="irACalendario()"
-      >
-        <i class="fas fa-calendar-alt me-2"></i> Agendar Cita
-      </button>
-    </div>
+
+  <!-- Botón inferior para continuar -->
+<div class="d-flex justify-content-center mt-4">
+  <div class="position-relative"> <!-- <- esto es clave -->
+    <!-- Burbuja de cantidad -->
+    <span class="badge-count" *ngIf="seleccionados.size > 0">
+      {{ seleccionados.size }}
+    </span>
+    <button
+      class="btn btn-success"
+      [disabled]="seleccionados.size === 0"
+      (click)="irACalendario()"
+    >
+      <i class="bi-cart-plus me-2"></i> Agendar Cita
+    </button>
   </div>
+</div>
+
 </div>

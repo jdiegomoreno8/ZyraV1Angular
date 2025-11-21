@@ -1,150 +1,230 @@
-/* Container general del formulario */
+/* ======= CONTAINER GENERAL ======= */
 .container {
-  max-width: 800px;
-  margin: auto;
-  padding: 1.5rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.4s ease-in-out;
 }
 
+h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-/* Grid para los botones de hora */
+/* Subtítulos y labels */
+.form-label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 0.6rem 0.75rem;
+  transition: all 0.2s ease-in-out;
+  font-size: 15px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #3765c8;
+  box-shadow: 0 0 0 0.2rem rgba(55, 101, 200, 0.25);
+}
+
+/* ======= GRID DE HORAS ======= */
 .hora-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 12px;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .hora-btn {
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-size: 14px;
-  border: 1px solid #007bff;
-  border-radius: 6px;
-  background-color: white;
-  color: #007bff;
-  transition: all 0.3s ease;
-  width: 100%;
+  border: 1px solid #0d6efd;
+  border-radius: 8px;
+  background: #fff;
+  color: #0d6efd;
+  font-weight: 500;
+  transition: all 0.25s ease;
 }
 
 .hora-btn:hover:not(.disabled) {
-  background-color: #007bff;
+  background-color: #0d6efd;
   color: white;
+  transform: scale(1.05);
 }
 
 .hora-btn.selected {
-  background-color: #007bff;
+  background-color: #0d6efd;
   color: white;
-  font-weight: bold;
+  font-weight: 600;
 }
 
-.hora-btn.disabled {
-  background-color: #e9ecef;
-  color: #999;
-  border-color: #ccc;
+/* ====== HORA BLOQUEADA (para botones Bootstrap) ====== */
+.hora-grid .btn:disabled,
+.hora-grid button[disabled] {
+  background-color: #e8eefc !important; /* 💥 Color solicitado #fae3e3*/
+  border-color: #0d6efd !important;       /*#e8b7b7*/
+  color: #0d6efd !important;     /*#d19a9a*/
+  opacity: 1 !important; /* asegura que se vea */
   cursor: not-allowed;
 }
 
-/* Estilo del mapa */
+/* ======= MAPA ======= */
 .map-container {
-  height: 300px;
+  height: 320px;
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  margin-top: 8px;
 }
 
-/* Modal */
+/* ======= BOTÓN AGENDAR ======= */
+.btn-agendar {
+  background: linear-gradient(90deg, #3765c8, #2e54a3);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-agendar:hover {
+  background: linear-gradient(90deg, #2e54a3, #24498f);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(55, 101, 200, 0.3);
+}
+
+.btn-agendar:disabled {
+  background: #b7c4e8;
+  cursor: not-allowed;
+  color: #f0f0f0;
+}
+
+/* ======= MODAL ======= */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1050;
 }
 
-.modal-content {
-  max-width: 500px;
+.modal-confirm {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
   width: 90%;
+  max-width: 600px;
+  animation: fadeIn 0.25s ease-in-out;
 }
 
-/* Media queries para ajustar textos y layout en móviles */
+.modal-title {
+  font-weight: 600;
+}
+
+.list-group-item {
+  font-size: 0.95rem;
+  border: none;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-actions button {
+  min-width: 120px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+
+/* ======= ANIMACIONES ======= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ======= ALERTAS, TEXTOS Y TICKETS ======= */
+.text-danger {
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.alert-info {
+  background: #e7f1ff;
+  border: 1px solid #b6d4fe;
+  color: #084298;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.alert-info .text-primary:hover {
+  text-decoration: underline;
+}
+
+/* Caja del ticket */
+.ticket-box {
+  border-left: 4px solid #0d6efd;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+/* ======= RESPONSIVE ======= */
 @media (max-width: 768px) {
   .container {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .hora-btn {
     font-size: 13px;
+    padding: 8px;
   }
 
   .map-container {
     height: 250px;
   }
 }
-
-.modal-content {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-/*Colores del boton Agendar*/
-.btn-agendar {
-  background-color: #3765C8;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
-}
-
-.btn-agendar:hover {
-  background-color: #2c52a8;
-}
-
-.btn-agendar:disabled {
-  background-color: #b3c3e6;
-  cursor: not-allowed;
-  color: #eee;
-}
-/* Color modal ticket */
-.ticket-box {
-  border-left: 4px solid #0d6efd; /* azul Bootstrap */
-  background-color: #f8f9fa;
-}
-/* Estilos del select */
-select.form-select {
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ced4da;
-  background-color: #fff;
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-select.form-select:focus {
-  border-color: #3765C8;
-  box-shadow: 0 0 0 0.2rem rgba(55, 101, 200, 0.25);
-}
-/* //hoover effect del modal ticket */
-.alert-info .text-primary:hover {
-  text-decoration: underline;
-}
-

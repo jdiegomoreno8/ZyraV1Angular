@@ -33,7 +33,7 @@ interface MetodoPago {
 
 interface ProductoSeleccionado {
   id_producto: number;
-  nombre: string;
+  nombrep: string;
   precio: number;
   cantidad: number;
 }
@@ -70,9 +70,18 @@ export class ScheduleComponent implements AfterViewChecked {
   valorProductos: number = 0;
   costoDomicilio: number = 0;
   totalPagar: number = 0;
+  modoEdicion: boolean = false;
+  citaIdParaEditar: number | null = null;
+  isSubmitting = false; // evita doble envío
+  metodoEnvioTexto: string = '';
+
+
+
 
   //método de pago
   metodosPago: { id_pago: number; metodo: string }[] = [];
+metodoPagoTexto: string = ''; 
+  
 
   // ─── Parámetros de la empresa ──────────────────────────────────────────────────────
   idEmpresa: number = 0;
@@ -84,7 +93,7 @@ export class ScheduleComponent implements AfterViewChecked {
   noHayHorasDisponibles: boolean = false;
 
   // ─── Confirmación de Cita ──────────────────────────────────────────────────
-  showConfirmation = false;
+  showConfirmation = false; //Controla la visibilidad del modal
   citaParaConfirmar!: Cita;
   ticketGenerado: string = '';
   ticketConfirmado: boolean = false;
@@ -122,11 +131,18 @@ this.productosSeleccionados = productosParam
       return {
         id_producto: +idStr,
         cantidad: +cantStr || 1,
-        nombre: '', // temporal, lo llenaremos más tarde
+        nombrep: '', // temporal, lo llenaremos más tarde
         precio: 0   // temporal, lo llenaremos más tarde
       } as ProductoSeleccionado;
     })
   : [];
+//Manejo por id de la cita para editar
+  const citaId = params['citaId'];
+if (citaId) {
+  this.citaIdParaEditar = +citaId;
+  this.modoEdicion = true;
+  this.cargarCitaExistente(+citaId);
+}
 
 
       const idEmpresa = params['empresa'];
@@ -471,18 +487,61 @@ private cargarUbicacionEmpresa(): void {
     return allHours;
   }
 
-  /**
-   * Genera y establece las horas disponibles en el componente.
-   */
-  private generateAvailableHours(): void {
-    const start = this.timeToMinutes(this.startHour);
-    const end = this.timeToMinutes(this.endHour);
-
+generateAvailableHours(): void {
+  if (!this.selectedDate) {
     this.availableHours = [];
-    for (let t = start; t <= end; t += 30) {
+    return;
+  }
+
+  // Convertir string a Date si es necesario
+  const selectedDateObj = new Date(this.selectedDate);
+
+  const start = this.timeToMinutes(this.startHour); // ej: "08:00"
+  const end = this.timeToMinutes(this.endHour);     // ej: "20:00"
+  this.availableHours = [];
+
+  const now = new Date();
+
+  // Calcula el minuto mínimo permitido
+  let minMinutes = start;
+
+  // Si la fecha seleccionada es hoy
+  if (
+    selectedDateObj.getFullYear() === now.getFullYear() &&
+    selectedDateObj.getMonth() === now.getMonth() &&
+    selectedDateObj.getDate() === now.getDate()
+  ) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    minMinutes = Math.max(start, currentMinutes + 120); // +2 horas
+  }
+
+  // Genera horarios de 30 en 30 minutos
+  for (let t = start; t <= end; t += 30) {
+    if (t >= minMinutes) {
       this.availableHours.push(this.minutesToTime(t));
     }
   }
+}
+
+
+
+onDateChange(newDate: string) {
+  this.selectedDate = newDate;
+  this.generateAvailableHours();
+}
+
+
+/**
+ * Normaliza los productos seleccionados para enviarlos correctamente al backend.
+ */
+private normalizeProductos(): { id_producto: number; cantidad: number; nombrep: string }[] {
+  return this.productosSeleccionados.map(p => ({
+    id_producto: p.id_producto,
+    cantidad: p.cantidad,
+    nombrep: p.nombrep || 'Producto desconocido' // usa 'nombre' si existe
+  }));
+}
+
 
   /**
    * Filtra las horas disponibles eliminando aquellas que ya están ocupadas.
@@ -537,6 +596,19 @@ private cargarUbicacionEmpresa(): void {
     }
   }
 
+  /* Función para obtener la hora mínima permitida*/
+  getMinHourForToday(): string {
+  const now = new Date();
+  now.setMinutes(0, 0, 0); // redondear al inicio de la hora
+  now.setHours(now.getHours() + 2); // +2 horas para evitar agendamiento urgente
+
+  // Devuelve en formato "HH:mm"
+  const h = now.getHours().toString().padStart(2, '0');
+  const m = now.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+
   // ─── Envío del Formulario ────────────────────────────────────────────────────
 
   /**
@@ -545,31 +617,21 @@ private cargarUbicacionEmpresa(): void {
 submitForm(): void {
   const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
   const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  console.log('Método de pago seleccionado:', this.userData.id_pago);
 
   if (
-    !this.userData.nombre.trim() ||
-    !this.userData.apellido.trim() ||
-    !this.userData.telefono.trim() ||
-    !this.userData.correo.trim() ||
-    !this.userData.hora.trim() ||
-    (this.userData.domicilio === 'si' && !this.userData.direccion.trim())
+    !this.userData.nombre?.trim() ||
+    !this.userData.apellido?.trim() ||
+    !this.userData.telefono?.trim() ||
+    !this.userData.correo?.trim() ||
+    !this.userData.hora?.trim() ||
+    (this.userData.domicilio === 'si' && !this.userData.direccion?.trim())
   ) {
-    this.toastr.warning(
-      'Por favor, completa todos los campos obligatorios.',
-      'Campos incompletos'
-    );
+    this.toastr.warning('Por favor, completa todos los campos obligatorios.', 'Campos incompletos');
     return;
   }
 
-  if (
-    !soloLetrasRegex.test(this.userData.nombre) ||
-    !soloLetrasRegex.test(this.userData.apellido)
-  ) {
-    this.toastr.warning(
-      'El nombre y apellido solo deben contener letras.',
-      'Validación'
-    );
+  if (!soloLetrasRegex.test(this.userData.nombre) || !soloLetrasRegex.test(this.userData.apellido)) {
+    this.toastr.warning('El nombre y apellido solo deben contener letras.', 'Validación');
     return;
   }
 
@@ -578,69 +640,73 @@ submitForm(): void {
     return;
   }
 
-  const direccion =
-    this.userData.domicilio === 'si' ? this.userData.direccion : 'tienda';
+  const direccion = this.userData.domicilio === 'si' ? this.userData.direccion : 'Tienda';
 
-  this.citaParaConfirmar = {
-    nombre: this.userData.nombre,
-    apellido: this.userData.apellido,
-    telefono: this.userData.telefono,
-    correo: this.userData.correo,
-    domicilio: this.userData.domicilio,
-    direccion,
-    hora: this.userData.hora,
-    fecha: this.selectedDate!,
-    id_empresa: this.idEmpresa,
-    productos: this.productosSeleccionados.map(p => ({
-      id_producto: p.id_producto,
-      cantidad: p.cantidad,
-    })),
-    distancia_km: this.distancia_km,
-    costo_domicilio: this.costoDomicilio,
-    id_pago: +this.userData.id_pago,
-    observaciones: this.userData.observaciones || '',
-    metodo_envio: this.userData.metodoEnvioFactura
-    
-    
-  };
+this.citaParaConfirmar = {
+  nombre: this.userData.nombre,
+  apellido: this.userData.apellido,
+  telefono: this.userData.telefono,
+  correo: this.userData.correo,
+  domicilio: this.userData.domicilio,
+  direccion: this.userData.domicilio === 'si' ? this.userData.direccion : 'Tienda',
+  hora: this.userData.hora,
+  fecha: this.selectedDate!,
+  id_empresa: this.idEmpresa,
+productos: this.normalizeProductos(),
+  distancia_km: this.distancia_km || 0,
+  costo_domicilio: this.costoDomicilio || 0,
+  id_pago: +this.userData.id_pago,
+  observaciones: this.userData.observaciones || '',
+  metodo_envio: this.userData.metodoEnvioFactura || 'No especificado'
+};
 
-  this.showConfirmation = true;
+// Mostrar el modal
+this.showConfirmation = true;
+
+// Nombre legible de métodos
+this.metodoPagoTexto = this.metodosPago.find(m => m.id_pago === +this.userData.id_pago)?.metodo || 'No especificado';
+this.metodoEnvioTexto = this.userData.metodoEnvioFactura === 'correo' ? 'Correo electrónico' : this.userData.metodoEnvioFactura === 'sms' ? 'Mensaje de texto' : 'No especificado';
+
+}
+  // ─── Confirmar y Registrar la Cita ───────────────────────────────────────────
+confirmAppointment(): void {
+  console.log('Enviando cita al backend:', this.citaParaConfirmar);
+
+  const citaObservable = this.citaIdParaEditar
+    ? this.citaService.actualizarCita(this.citaIdParaEditar, this.citaParaConfirmar)
+    : this.citaService.agendarCita(this.citaParaConfirmar);
+
+  this.isSubmitting = true;
+
+  citaObservable.subscribe({
+    next: (response) => {
+      this.toastr.success(
+        this.citaIdParaEditar ? 'Cita actualizada exitosamente.' : 'Cita registrada exitosamente.',
+        'Confirmación'
+      );
+
+      this.ticketGenerado = response.numero_ticket || '---';
+      this.ticketConfirmado = true;
+      this.resetForm();
+      this.showConfirmation = false;
+      this.isSubmitting = false;
+        // Redirigir al componente formUser
+      this.router.navigate(['/form-user'], {
+        queryParams: {
+          ticket: this.ticketGenerado,
+          citaId: response.id_cita || null
+        }
+      });
+    },
+    error: (error) => {
+      console.error('Error al guardar la cita:', error);
+      this.toastr.error('No se pudo guardar la cita. Intenta nuevamente.', 'Error');
+      this.isSubmitting = false;
+    }
+  });
 }
 
 
-  // ─── Confirmar y Registrar la Cita ───────────────────────────────────────────
-
-  /**
-   * Confirma y envía la cita al backend.
-   */
-  confirmAppointment(): void {
-    if (!this.citaParaConfirmar) {
-      this.toastr.warning('No hay datos para confirmar.');
-      return;
-    }
-    console.log('Enviando cita al backend:', this.citaParaConfirmar);
-
-    this.citaService.agendarCita(this.citaParaConfirmar).subscribe({
-      next: (response) => {
-        this.toastr.success('Cita registrada exitosamente.', 'Confirmación');
-
-        this.ticketGenerado = response.numero_ticket || '---';
-        this.ticketConfirmado = true; // Oculta el formulario, muestra solo el ticket
-
-        console.log('Ticket generado:', this.ticketGenerado);
-
-        this.resetForm(); // Limpia el formulario, pero dejamos el modal abierto
-      },
-      error: (error) => {
-        console.error('Error al registrar la cita:', error);
-        this.toastr.error(
-          'Error al registrar la cita. Intenta nuevamente.',
-          'Error'
-        );
-      },
-      
-    });
-  }
 
   // ─── Productos de la Empresa ─────────────────────────────────────────────────
 
@@ -666,7 +732,7 @@ cargarNombresProductos(): void {
 
         return {
           ...seleccionado,
-          nombre: producto?.nombre || 'Producto desconocido',
+          nombrep: producto?.nombre || 'Producto desconocido',
           precio: producto?.precio ?? 0
         };
       });
@@ -681,6 +747,50 @@ this.selectedProductIds = this.productosSeleccionados.map(p => p.id_producto);
 
       this.actualizarTotal();
     },
+  });
+}
+
+//Cargar la cita para modificar
+private cargarCitaExistente(citaId: number): void {
+  this.citaService.getCitaPorId(citaId).subscribe({
+    next: (cita: Cita) => {
+      this.userData = {
+        nombre: cita.nombre,
+        apellido: cita.apellido,
+        telefono: cita.telefono,
+        correo: cita.correo,
+        domicilio: cita.domicilio,
+        direccion: cita.direccion,
+        distancia_km: cita.distancia_km || 0,
+        hora: cita.hora,
+        id_pago: String(cita.id_pago), // convertir a string si viene como número
+        observaciones: cita.observaciones || '',
+        metodoEnvioFactura: cita.metodo_envio || ''
+      };
+
+      this.selectedDate = cita.fecha;
+      this.idEmpresa = cita.id_empresa ?? 0;
+      this.empresaSeleccionada = ''; // puedes ajustar si tienes nombre
+
+      this.productosSeleccionados = cita.productos.map((p) => ({
+        id_producto: p.id_producto,
+        cantidad: p.cantidad,
+        nombrep: '',
+        precio: 0
+      }));
+
+      this.cargarNombresProductos(); // carga nombre y precio
+
+      if (cita.domicilio === 'si') {
+        this.mapInitialized = false; // fuerza carga del mapa si es con domicilio
+      }
+
+      this.cargarHorasOcupadas(cita.fecha);
+    },
+    error: (err) => {
+      console.error('Error al cargar cita existente:', err);
+      this.toastr.error('No se pudo cargar la cita para editar.', 'Error');
+    }
   });
 }
 

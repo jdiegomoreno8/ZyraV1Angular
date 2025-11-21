@@ -2,7 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ApiService } from '../../../services/api.service';
+import { CitaService } from '../../../services/cita.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -21,7 +21,7 @@ export class AnularCitaComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private apiService: ApiService
+    private citaService: CitaService  // ✅ Ya no usamos ApiService
   ) {}
 
   ngOnInit(): void {
@@ -33,18 +33,20 @@ export class AnularCitaComponent implements OnInit {
     }
 
     this.loading = true;
-    this.apiService.getCitaPorId(+id).subscribe({
+
+    this.citaService.getCitaPorId(+id).subscribe({
       next: (data) => {
         this.cita = data;
         this.loading = false;
       },
-      error: () => {
+      error: (error) => {
+        console.error('Error al obtener cita:', error);
         this.router.navigate(['/']);
       }
     });
   }
 
-  anularCita() {
+  anularCita(): void {
     if (!this.comentario.trim()) {
       alert('Por favor, escribe un comentario antes de anular la cita.');
       return;
@@ -52,21 +54,20 @@ export class AnularCitaComponent implements OnInit {
 
     this.loading = true;
 
-    this.apiService.anularCita(this.cita.id, this.comentario).subscribe({
+    this.citaService.anularCita(this.cita.id, this.comentario).subscribe({
       next: () => {
         this.mensaje = '✅ Cita anulada con éxito.';
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 2000);
+        setTimeout(() => this.router.navigate(['/']), 2000);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error al anular cita:', err);
         this.mensaje = '❌ Error al anular la cita.';
         this.loading = false;
       }
     });
   }
 
-  cancelar() {
+  cancelar(): void {
     this.router.navigate(['/']);
   }
 }

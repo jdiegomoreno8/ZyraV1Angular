@@ -1,3 +1,4 @@
+// history.component.ts
 declare var bootstrap: any;
 
 import {
@@ -11,6 +12,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { CitaService } from '../../../services/cita.service';
 import { ApiService } from '../../../services/api.service';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -37,12 +39,12 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private codigoModalInstance: any = null;
   private modalEl: HTMLElement | null = null;
-  private modalShownListener: (() => void) | null = null;
 
   private isBrowser: boolean;
 
   constructor(
-    private apiService: ApiService,
+    private CitaService: CitaService,
+    private ApiService: ApiService, 
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
@@ -56,116 +58,153 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     if (this.modalEl) {
       this.codigoModalInstance = new bootstrap.Modal(this.modalEl, { keyboard: false });
 
-      // Enfoca input cuando modal ya está visible (más robusto que setTimeout)
+      // Enfoca input cuando modal ya está visible
       this.modalEl.addEventListener('shown.bs.modal', () => {
         this.inputCodigoRef?.nativeElement?.focus();
       });
     }
+
+    // Limpiar backdrop al cerrar cualquier modal
+    const modalesIds = ['citaModal', 'codigoModal', 'citaAnuladaModal'];
+    modalesIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('hidden.bs.modal', () => this._removeBackdrop());
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (!this.isBrowser) return;
-
-    if (this.modalEl && this.modalShownListener) {
-      this.modalEl.removeEventListener('shown.bs.modal', this.modalShownListener);
-    }
-    // También limpia cualquier backdrop que pueda quedar colgado
+    // Limpieza extra de backdrops
     this._removeBackdrop();
   }
 
-  buscarCita() {
-    if (!this.ticketInput.trim()) return;
+buscarCita() {
+  if (!this.ticketInput.trim()) return;
 
-    this.error = '';
-    this.loading = true;
+  this.error = '';
+  this.loading = true;
 
-    this.apiService.getCitaPorTicket(this.ticketInput.trim()).subscribe({
-      next: (data) => {
-        this.cita = data;
-        this.loading = false;
+  this.CitaService.getCitaPorTicket(this.ticketInput.trim()).subscribe({
+    next: (data) => {
+      this.cita = data;
+      this.loading = false;
 
-        if (!this.isBrowser) return;
+      // 🔹 Completar datos faltantes de empresa y pago
+      this._completarDatosCita();
 
-        if (this.cita.estado === 'anulada') {
-          const anuladaModalEl = document.getElementById('citaAnuladaModal');
-          if (anuladaModalEl) {
-            const modal = new bootstrap.Modal(anuladaModalEl);
-            modal.show();
-          }
-        } else {
-          const modalEl = document.getElementById('citaModal');
-          if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-          }
+      if (!this.isBrowser) return;
+
+      if (this.cita.estado === 'anulada') {
+        const anuladaModalEl = document.getElementById('citaAnuladaModal');
+        if (anuladaModalEl) {
+          const modal = new bootstrap.Modal(anuladaModalEl);
+          modal.show();
         }
+      } else {
+        const modalEl = document.getElementById('citaModal');
+        if (modalEl) {
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }
+      }
+    },
+    error: (err) => {
+      this.error = err.status === 404 ? 'Cita no encontrada' : 'Error al buscar cita';
+      this.loading = false;
+    },
+  });
+}
+
+abrirModalCodigo(accion: 'editar' | 'anular') {
+  this.accionPendiente = accion;
+  this.codigoIngresado = '';
+  this.errorCodigo = '';
+  this.loadingCodigo = false;
+
+  if (!this.isBrowser) return;
+
+  // Cerrar modal de cita si está abierto
+  const citaModalEl = document.getElementById('citaModal');
+  const citaModalInstance = citaModalEl ? bootstrap.Modal.getInstance(citaModalEl) : null;
+  if (citaModalInstance) {
+    citaModalInstance.hide();
+  }
+
+  // Asegurarse de tener instancia de modal
+  const codigoModalEl = document.getElementById('codigoModal');
+  if (codigoModalEl) {
+    this.codigoModalInstance = new bootstrap.Modal(codigoModalEl);
+    this.codigoModalInstance.show();
+  }
+}
+
+
+
+  private _completarDatosCita() {
+  if (!this.cita) return;
+
+  // Obtener nombre de la empresa si no vino desde la API de citas
+  if (!this.cita.empresa_nombre && this.cita.id_empresa) {
+    this.ApiService.getEmpresaPorId(this.cita.id_empresa).subscribe({
+      next: (empresa) => {
+        this.cita.empresa_nombre = empresa.nombre;
       },
-      error: (err) => {
-        this.error = err.status === 404 ? 'Cita no encontrada' : 'Error al buscar cita';
-        this.loading = false;
-      },
+      error: (err) => console.error('Error al obtener empresa:', err)
     });
   }
 
-  abrirModalCodigo(accion: 'editar' | 'anular') {
-    this.accionPendiente = accion;
-    this.codigoIngresado = '';
-    this.errorCodigo = '';
-    this.loadingCodigo = false;
-
-    if (this.codigoModalInstance) {
-      this.codigoModalInstance.show();
-    }
-  }
-
-  validarCodigo() {
-    if (!this.codigoIngresado || !this.cita?.numero_ticket) {
-      this.errorCodigo = 'Debe ingresar un código válido';
-      return;
-    }
-
-    this.errorCodigo = '';
-    this.loadingCodigo = true;
-
-    this.apiService.validarCodigoCita(this.cita.numero_ticket, this.codigoIngresado).subscribe({
-      next: () => {
-        this.loadingCodigo = false;
-
-        if (this.codigoModalInstance && this.modalEl) {
-          // Escuchar evento cuando modal termine de ocultarse
-          const onHidden = () => {
-            this.modalEl!.removeEventListener('hidden.bs.modal', onHidden);
-
-            // Eliminar backdrop manualmente
-            this._removeBackdrop();
-
-            // Navegar sólo después de que modal esté cerrado y backdrop limpio
-            this._navigateAfterValidation();
-          };
-
-          this.modalEl.addEventListener('hidden.bs.modal', onHidden);
-
-          // Oculta el modal - esto dispara la animación y luego el evento hidden.bs.modal
-          this.codigoModalInstance.hide();
-        } else {
-          // Por si no hay modal, navega directamente
-          this._navigateAfterValidation();
-        }
+  // Obtener método de pago si solo vino el ID
+  if (!this.cita.metodo_pago && this.cita.id_pago) {
+    this.ApiService.getMetodosPago().subscribe({
+      next: (metodos) => {
+        const metodo = metodos.find(m => m.id_pago === this.cita.id_pago);
+        if (metodo) this.cita.metodo_pago = metodo.metodo;
       },
-      error: (err) => {
-        this.loadingCodigo = false;
-        this.errorCodigo = err.error?.message || 'Código incorrecto o error en validación';
-        console.error('Error validando código:', err);
-      },
+      error: (err) => console.error('Error al obtener métodos de pago:', err)
     });
   }
+}
+
+
+validarCodigo() {
+  if (!this.codigoIngresado || !this.cita?.numero_ticket) {
+    this.errorCodigo = 'Debe ingresar un código válido';
+    return;
+  }
+
+  this.errorCodigo = '';
+  this.loadingCodigo = true;
+
+  this.CitaService.validarCodigoCita(this.cita.numero_ticket, this.codigoIngresado).subscribe({
+    next: () => {
+      this.loadingCodigo = false;
+
+      // 🔹 Si hay modal activo, cerrarlo y luego navegar
+      if (this.codigoModalInstance) {
+        const modalEl = document.getElementById('codigoModal');
+        if (modalEl) {
+          modalEl.addEventListener('hidden.bs.modal', () => this._navigateAfterValidation(), { once: true });
+        }
+        this.codigoModalInstance.hide();
+      } else {
+        this._navigateAfterValidation();
+      }
+    },
+    error: (err) => {
+      this.loadingCodigo = false;
+      this.errorCodigo = err.error?.message || 'Código incorrecto o error en validación';
+      console.error('Error validando código:', err);
+    },
+  });
+}
+
 
   cerrarModalCodigo() {
-    if (this.codigoModalInstance) {
-      this.codigoModalInstance.hide();
-    }
+    if (this.codigoModalInstance) this.codigoModalInstance.hide();
     this.limpiarModalCodigo();
-    this._removeBackdrop(); // Limpia backdrop residual
+    this._removeBackdrop();
   }
 
   limpiarModalCodigo() {
@@ -175,24 +214,32 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     this.accionPendiente = null;
   }
 
-  // Método auxiliar para navegación según acción
-  private _navigateAfterValidation() {
-    if (this.accionPendiente === 'editar') {
-      this.router.navigate(['/editar-cita', this.cita.id]);
-    } else if (this.accionPendiente === 'anular') {
-      this.router.navigate(['/anular-cita', this.cita.id]);
-    }
+private _navigateAfterValidation() {
+  if (!this.cita) return;
+
+  if (this.accionPendiente === 'editar') {
+    this.router.navigate(['/editar-cita'], {
+      queryParams: {
+        empresa: this.cita.id_empresa,
+        empresa_nombre: this.cita.empresa_nombre,
+        date: this.cita.fecha,
+        productos: this._formatearProductos(this.cita.productos),
+        citaId: this.cita.id
+      }
+    });
+  } else if (this.accionPendiente === 'anular') {
+    this.router.navigate(['/anular-cita', this.cita.id]);
+  }
+}
+
+  private _formatearProductos(productos: { id_producto: number, cantidad: number }[]): string {
+    return productos.map(p => `${p.id_producto}:${p.cantidad}`).join(',');
   }
 
-  // Método para remover manualmente backdrop y clases de body
   private _removeBackdrop() {
     if (!this.isBrowser) return;
 
-    // eliminar elementos .modal-backdrop que queden
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(b => b.remove());
-
-    // quitar clase modal-open del body
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
     document.body.classList.remove('modal-open');
   }
 }

@@ -1,40 +1,31 @@
-/* Tarjetas base */
 .product-card {
   border: none;
   border-radius: 16px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   color: white;
-  overflow: hidden;
   position: relative;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
-}
-
-/* Imagen */
-.image-container {
-  height: 180px;
-  overflow: hidden;
+  height: 180px; /* altura uniforme */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.icon-container {
+  font-size: 3rem;
+  display: flex;
   justify-content: center;
-  background-color: rgba(255,255,255,0.1);
+  align-items: center;
+  margin-top: 1rem;
+  color: rgba(255,255,255,0.85);
+  transition: transform 0.3s ease, color 0.3s ease;
 }
 
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
+.product-card:hover .icon-container {
+  transform: scale(1.2);
+  color: #ffc107;
 }
 
-.product-card:hover .product-image {
-  transform: scale(1.08);
-}
-
-/* Badge personalizada */
 .badge-custom {
   position: absolute;
   top: 12px;
@@ -47,31 +38,20 @@
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   text-transform: uppercase;
+  z-index: 2;
 }
 
-/* Títulos */
 .card-title {
   font-size: 1.1rem;
   font-weight: 700;
 }
 
-.card-text {
-  font-size: 0.9rem;
-  color: #eaeaea;
-}
-
-/* Botón */
 .card-footer button {
   font-size: 0.85rem;
   border-radius: 20px;
 }
 
-.spinner-border {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Colores de categoría */
+/* Gradientes por categoría */
 .bg-tech       { background: linear-gradient(135deg, #2196f3, #1e88e5); }
 .bg-belleza    { background: linear-gradient(135deg, #f48fb1, #f06292); }
 .bg-paraf      { background: linear-gradient(135deg, #7e57c2, #5e35b1); }
@@ -82,16 +62,12 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .image-container {
-    height: 160px;
+  .icon-container {
+    font-size: 2.5rem;
   }
 
   .card-title {
     font-size: 1rem;
-  }
-
-  .card-text {
-    font-size: 0.85rem;
   }
 
   .badge-custom {
@@ -99,8 +75,9 @@
     padding: 3px 8px;
   }
 }
-/* ajustar el color y tamaño del icono info */
- .card-title .bi-info-circle-fill {
+
+/* Tooltip icon hover */
+.card-title .bi-info-circle-fill {
   font-size: 1rem;
   cursor: pointer;
   transition: color 0.2s ease;

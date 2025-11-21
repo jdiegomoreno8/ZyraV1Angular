@@ -1,3 +1,4 @@
+//app.routes.ts
 import { Routes } from '@angular/router';
 
 import { FormUserComponent } from './pages/Forms/user/formUserComponent';
@@ -10,41 +11,35 @@ import { HomeComponent } from './pages/Forms/home/home.component';
 import { ScheduleComponent } from './pages/Forms/schedule/schedule.component';
 import { EmpresaProductosComponent } from './pages/Forms/empresa-productos/empresa-productos.component';
 import { HistoryComponent } from './pages/Forms/history/history.component';
-import { EditarCitaComponent } from './pages/Forms/editar-cita/editar-cita.component';
+
 import { AnularCitaComponent } from './pages/Forms/anular-cita/anular-cita.component';
+import { EditarCitaComponent } from './pages/Forms/editar-cita/editar-cita.component';
 
 export const routes: Routes = [
-
   {
-        path: '',
+    path: '',
     component: LayoutComponent,
     children: [
-
-    { path: '', component: HomeComponent },
-    { path: 'form-user', component: FormUserComponent },
-    { path: 'form-settings', component: FormSettingsComponent },
-    { path: 'calendar', component: CalendarComponent },
-    { path: 'schedule', component: ScheduleComponent }, 
-    { path: 'product-empresas-dialog', component: ProductEmpresasDialogComponent }, 
-    { path: 'productos', component: ProductosComponent },
-    { path: 'empresa/:id/productos', component: EmpresaProductosComponent },
-    { path: 'history', component: HistoryComponent },
-    {
-  path: 'editar-cita/:id',
-  loadComponent: () => import('./pages/Forms/editar-cita/editar-cita.component').then(m => m.EditarCitaComponent)
-},
-{
-  path: 'anular-cita/:id',
-  loadComponent: () => import('./pages/Forms//anular-cita/anular-cita.component').then(m => m.AnularCitaComponent)
-}
-
-
-
-
-    
-
-
-     
-    ]
-  }
+      { path: '', component: HomeComponent },
+      { path: 'form-user', component: FormUserComponent },
+      { path: 'form-settings', component: FormSettingsComponent },
+      { path: 'calendar', component: CalendarComponent },
+      { path: 'schedule', component: ScheduleComponent },
+      {
+        path: 'product-empresas-dialog',
+        component: ProductEmpresasDialogComponent,
+      },
+      { path: 'productos', component: ProductosComponent },
+      { path: 'empresa/:id/productos', component: EmpresaProductosComponent },
+      { path: 'history', component: HistoryComponent },
+      {path: 'editar-cita', component: EditarCitaComponent},
+      {
+        path: 'anular-cita/:id',
+        loadComponent: () =>
+          import('./pages/Forms//anular-cita/anular-cita.component').then(
+            (m) => m.AnularCitaComponent
+          ),
+      },
+    ],
+  },
 ];
